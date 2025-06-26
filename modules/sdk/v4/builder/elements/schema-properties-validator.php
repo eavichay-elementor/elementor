@@ -4,53 +4,51 @@ namespace Elementor\Modules\Sdk\V4\Builder\Elements;
 
 use Elementor\Modules\Sdk\V4\Builder\SUPPORTED_PROPERTY_TYPES;
 
-trait Schema_Properties_Validator
-{
-    protected function validate_select_property($property)
-    {
-        if (!isset($property['options'])) {
-            throw new \InvalidArgumentException('Select property must have options');
-        }
+trait Schema_Properties_Validator {
 
-        if (!is_array($property['options'])) {
-            throw new \InvalidArgumentException('Select property options must be an array');
-        }
+	protected function validate_select_property( $property ) {
+		if ( ! isset( $property['options'] ) ) {
+			throw new \InvalidArgumentException( 'Select property must have options' );
+		}
 
-        foreach ($property['options'] as $option) {
-            if (!isset($option['value'])) {
-                throw new \InvalidArgumentException('Select property option must have a value');
-            }
-            if (!isset($option['label'])) {
-                $option['label'] = $option['value'];
-            }
-        }
-    }
+		if ( ! is_array( $property['options'] ) ) {
+			throw new \InvalidArgumentException( 'Select property options must be an array' );
+		}
 
-    protected function validate_property($property)
-    {
-        if (!isset($property['type'])) {
-            throw new \InvalidArgumentException('Property must have a type');
-        }
+		foreach ( $property['options'] as $option ) {
+			if ( ! isset( $option['value'] ) ) {
+				throw new \InvalidArgumentException( 'Select property option must have a value' );
+			}
+			if ( ! isset( $option['label'] ) ) {
+				$option['label'] = $option['value'];
+			}
+		}
+	}
 
-        SUPPORTED_PROPERTY_TYPES::is($property['type']);
+	protected function validate_property( $property ) {
+		if ( ! isset( $property['type'] ) ) {
+			throw new \InvalidArgumentException( 'Property must have a type' );
+		}
 
-        if (!isset($property['name'])) {
-            throw new \InvalidArgumentException('Property must have a name');
-        }
+		SUPPORTED_PROPERTY_TYPES::is( $property['type'] );
 
-        // Set default label
-        if (!isset($property['label'])) {
-            $property['label'] = $property['name'];
-        }
+		if ( ! isset( $property['name'] ) ) {
+			throw new \InvalidArgumentException( 'Property must have a name' );
+		}
 
-        // Set default value
-        if (!isset($property['default'])) {
-            $property['default'] = null;
-        }
+		// Set default label
+		if ( ! isset( $property['label'] ) ) {
+			$property['label'] = $property['name'];
+		}
 
-        // In case of select - validate as select
-        if ($property['type'] === 'select') {
-            $this->validate_select_property($property);
-        }
-    }
+		// Set default value
+		if ( ! isset( $property['default'] ) ) {
+			$property['default'] = null;
+		}
+
+		// In case of select - validate as select
+		if ( $property['type'] === 'select' ) {
+			$this->validate_select_property( $property );
+		}
+	}
 }

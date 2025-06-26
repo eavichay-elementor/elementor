@@ -18,10 +18,10 @@ use Exception;
 
 class Controls_Builder {
 
-	private $schema = array();
+	private $schema = [];
 
 	public function __construct( array $schema ) {
-		$properties   = $schema['properties'] ?? array();
+		$properties   = $schema['properties'] ?? [];
 		$this->schema = $properties;
 	}
 
@@ -46,7 +46,7 @@ class Controls_Builder {
 				break;
 			case 'select':
 				$control = Select_Control::bind_to( $name );
-				$control->set_options( $property['options'] ?? array() );
+				$control->set_options( $property['options'] ?? [] );
 				break;
 			case 'text_area':
 				$control = Textarea_Control::bind_to( $name );
@@ -56,7 +56,7 @@ class Controls_Builder {
 				throw new Exception( "Unsupported property type: {$type}" );
 		}
 		$control->set_label( $label );
-		$meta = $property['meta'] ?? array();
+		$meta = $property['meta'] ?? [];
 		if ( ! empty( $meta ) ) {
 			$control->set_meta( $meta );
 		}
@@ -65,7 +65,7 @@ class Controls_Builder {
 
 	public function build_props_schema() {
 		$properties = $this->schema;
-		$result     = array();
+		$result     = [];
 		foreach ( $properties as $property ) {
 			$name            = $property['name'] ?? '';
 			$result[ $name ] = $this->build_property( $property );
@@ -90,7 +90,7 @@ class Controls_Builder {
 				return String_Prop_Type::make()
 					->default( $default_value ?? null );
 			case 'select':
-				$options = $property['options'] ?? array();
+				$options = $property['options'] ?? [];
 				$values  = array_map(
 					fn( $option ) => $option['value'],
 					$options
