@@ -24,6 +24,15 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		return Registry::instance( 'atomic-custom-render-functions' );
 	}
 
+	/**
+	 * @return array
+	 */
+	public function get_initial_config(): array {
+		$config = parent::get_initial_config();
+		$config['external_icon'] = '1';
+		return $config;
+	}
+
 	public static function get_schema_registry() {
 		return Registry::instance( 'atomic-custom-schemas' );
 	}
@@ -94,8 +103,6 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		}
 		return [];
 	}
-
-	protected function render_css() {}
 
 	protected function render() {
 		$css = $this->get_own_schema()['css'] ?? null;

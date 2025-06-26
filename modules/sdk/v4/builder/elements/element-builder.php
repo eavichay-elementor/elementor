@@ -24,6 +24,10 @@ class Element_Builder implements I_Element_Builder {
 		$this->schema = array_merge( $this->schema, $partial );
 	}
 
+	public function set_template( string $template ): void {
+		$this->set( 'template', $template );
+	}
+
 	public function set_name( string $name ): void {
 		$this->validator->set_element_name( $name );
 	}
