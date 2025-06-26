@@ -34,7 +34,11 @@ class Element_Builder implements I_Element_Builder
     protected function pre_build()
     {
         $schema = $this->validator->get_schema();
-        if (isset($schema['script']) && !isset($schema['_path'])) {
+        $has_script = isset($schema['script']);
+        $has_css = isset($schema['css']);
+        $has_template = isset($schema['template']);
+        $check_required = $has_script || $has_css || $has_template;
+        if ($check_required && !isset($schema['_path'])) {
             $trace = debug_backtrace();
             $caller_file = $trace[1]['file'];
             $this->set_assets_dir(dirname($caller_file));
