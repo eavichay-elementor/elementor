@@ -42,7 +42,10 @@ class Element_Schema_Validator {
 	 * @throws Exception
 	 */
 	public function get_element_name(): string {
-		return $this->schema['name'] ?? throw new Exception( esc_html( 'Schema must have a name' ) );
+		if ( ! isset( $this->schema['name'] ) ) {
+			throw new Exception( esc_html( 'Schema must have a name' ) );
+		}
+		return $this->schema['name'];
 	}
 
 	public function get_widget_alias(): string {

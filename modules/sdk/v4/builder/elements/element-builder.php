@@ -16,7 +16,7 @@ class Element_Builder implements I_Element_Builder {
 	 * @var User_Defined_Atomic_Element|null
 	 */
 	private $widget_instance = null;
-	
+
 	private Element_Schema_Validator $validator;
 
 	public function __construct( $name = '' ) {

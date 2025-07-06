@@ -16,13 +16,12 @@ class User_Defined_Html_Renderer {
 
 	// type assertion for HTMLElement
 	/**
-	 * @param mixed $value
 	 * @return DOMElement
 	 * @throws \Exception
 	 */
 	protected function is_html_element( mixed $value ): DOMElement {
 		if ( ! $value instanceof DOMElement ) {
-			throw new \Exception( 'Invalid HTML element' );
+			throw new \Exception( esc_html( 'Invalid HTML element' ) );
 		}
 		return $value;
 	}

@@ -4,9 +4,7 @@ namespace Elementor\Modules\Sdk\V4\Builder;
 
 use Exception;
 
-/**
- * phpcs:ignore Generic.PHP.Syntax.PHPSyntax
- */
+// phpcs:ignore Generic.PHP.Syntax.PHPSyntax
 enum SUPPORTED_PROPERTY_TYPES: string {
 
 	case IMAGE = 'image';
