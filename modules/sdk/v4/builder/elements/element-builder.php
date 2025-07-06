@@ -62,6 +62,7 @@ class Element_Builder implements I_Element_Builder {
 		$ns = __NAMESPACE__;
 		$class_name = $this->generate_class_name();
 		$code = "class {$class_name} extends {$ns}\User_Defined_Atomic_Element {}";
+		// phpcs:ignore Squiz.PHP.Eval.Discouraged
 		eval( $code );
 		Registry::instance( 'atomic-custom-schemas' )->set( $class_name, $widget_schema );
 		$this->widget_instance = new $class_name( [], null );

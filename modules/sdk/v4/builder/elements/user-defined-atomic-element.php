@@ -85,7 +85,7 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		$all_sections = $this->controls_by_category;
 		$sections = [];
 		foreach ( $all_sections as $category => $controls ) {
-			if ('settings' === $category) {
+			if ( 'settings' === $category ) {
 				continue;
 			}
 			$section = Section::make()->set_label( $category );
@@ -233,8 +233,7 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		}
 		$html = $document->saveHTML( $host_element );
 		if ( $print ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
-			echo $html;
+			echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 		return $html;
 	}

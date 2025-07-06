@@ -59,7 +59,8 @@ class Element_Injector {
 				if ( ! $success ) {
 					throw new \Exception( 'Failed to append XML to document fragment' );
 				}
-				$replacement = $fragment->firstElementChild;
+                // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+                $replacement = $fragment->firstElementChild;
 				$injection_point->replaceWith( $replacement );
 			}
 		}
@@ -75,7 +76,8 @@ class Element_Injector {
 		if ( $element->hasAttribute( 'is' ) && $element->getAttribute( 'is' ) === 'elementor-widget' ) {
 			return [ $element ];
 		}
-		$children = $element->childNodes;
+        // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+        $children = $element->childNodes;
 		foreach ( $children as $child ) {
 			if ( $child instanceof DOMElement ) {
 				$injection_points[] = $this->find_injection_points( $child );
