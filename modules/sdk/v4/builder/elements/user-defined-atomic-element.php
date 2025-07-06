@@ -54,7 +54,10 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		return $reg->get( static::class );
 	}
 
-	public static function get_render_function(): callable|null {
+	/**
+	 * @return callable|null
+	 */
+	public static function get_render_function() {
 		$reg = self::get_render_functions_registry();
 		return $reg->get( static::class );
 	}

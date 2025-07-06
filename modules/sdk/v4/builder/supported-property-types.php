@@ -5,8 +5,7 @@ namespace Elementor\Modules\Sdk\V4\Builder;
 use Exception;
 
 /**
- * @package Elementor\Modules\AtomicWidgets\Elements\Sdk
- * @since 3.32.0
+ * phpcs:ignore Generic.PHP.Syntax.PHPSyntax
  */
 enum SUPPORTED_PROPERTY_TYPES: string {
 
