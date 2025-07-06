@@ -119,6 +119,11 @@ class Widgets_Manager {
 
 		$this->register_promoted_widgets();
 
+		include ELEMENTOR_PATH . 'includes/widgets/v4/widgets-autoloader.php';
+		\Elementor\V4\Widgets_Autoloader::load();
+
+		do_action('elementor/widgets/register-atoms', $this);
+
 		foreach ( $build_widgets_filename as $widget_filename ) {
 			include ELEMENTOR_PATH . 'includes/widgets/' . $widget_filename . '.php';
 

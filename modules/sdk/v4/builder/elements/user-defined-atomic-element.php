@@ -16,9 +16,15 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 
 	protected $controls_by_category = [];
 
+	protected $_has_template_content = false;
+
 	use Has_Template {
 		render as protected _render;
+		build_default_render_context as protected trait_build_default_render_context;
+		get_initial_config as protected trait_get_initial_config;
 	}
+
+	// use Has_Template;
 
 	public static function get_render_functions_registry() {
 		return Registry::instance( 'atomic-custom-render-functions' );
@@ -28,8 +34,12 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 	 * @return array
 	 */
 	public function get_initial_config(): array {
-		$config = parent::get_initial_config();
+		$config = $this->trait_get_initial_config();
 		$config['external_icon'] = '1';
+		if ( $this->get_render_function() || Plugin::$instance->editor->is_edit_mode() ) {
+			unset( $config['twig_main_template'] );
+			unset( $config['twig_templates'] );
+		}
 		return $config;
 	}
 
@@ -86,9 +96,18 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 	}
 
 	protected function define_base_styles(): array {
+		$schema = $this->get_own_schema();
 		$style_def = Style_Definition::make();
 		$style_variant = Style_Variant::make();
 		$style_def->add_variant( $style_variant );
+		// TODO: this is not yet complete work
+		// if ($schema['style'] ?? false) {
+		// $styles_builder = new Styles_Builder($schema);
+		// $props = $styles_builder->build();
+		// foreach ($props as $prop) {
+		// $style_variant->add_prop(...$prop);
+		// }
+		// }
 		return [
 			'base' => $style_def,
 		];
@@ -104,14 +123,21 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		return [];
 	}
 
-	protected function render() {
-		$css = $this->get_own_schema()['css'] ?? null;
-		if ( $css ) {
-			$css_path = $this->get_own_schema()['_path'] . '/' . $css;
-			$this->add_render_attribute( 'wrapper', 'class', $css_path );
-		}
-		$this->_render();
+	protected function build_default_render_context() {
+		$context = $this->trait_build_default_render_context();
+		$context['edit_mode'] = Plugin::$instance->editor->is_edit_mode();
+		return $context;
 	}
+
+	public function render_default() {
+		ob_start();
+		$render_context = $this->build_default_render_context();
+		$this->_render( $render_context );
+		$output = ob_get_clean();
+		return $output;
+	}
+
+	protected $mode = 'save';
 
 	public function prepare_controls() {
 		$schema = $this->get_own_schema();
@@ -123,7 +149,7 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 			if ( ! isset( $this->controls_by_category[ $category ] ) ) {
 				$this->controls_by_category[ $category ] = [];
 			}
-			$this->controls_by_category[ $category ][] = $control;
+			array_push( $this->controls_by_category[ $category ], ...$control );
 		}
 	}
 
@@ -137,11 +163,15 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		if ( $css ) {
 			$assets_path = $this->get_own_schema()['_path'];
 			$css_path = $assets_path . '/' . $css;
-			$css_handle = 'elementor-atomic-custom-css-' . $this->get_title();
 			$wp_content_dir = WP_CONTENT_DIR;
-			$site_url = get_site_url();
-			$relative_path = str_replace( $wp_content_dir, '', $css_path );
-			$css_path = $site_url . '/wp-content' . $relative_path;
+			if ( str_contains( $css_path, ELEMENTOR_PATH ) ) {
+				$css_path = str_replace( ELEMENTOR_PATH, ELEMENTOR_URL, $css_path );
+			} else {
+				$site_url = get_site_url();
+				$relative_path = str_replace( $wp_content_dir, '', $css_path );
+				$css_path = $site_url . '/wp-content' . $relative_path;
+			}
+			$css_handle = 'elementor-atomic-custom-css-' . $this->get_title();
 			wp_register_style(
 				$css_handle,
 				$css_path,
@@ -149,20 +179,6 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 				ELEMENTOR_VERSION,
 			);
 			wp_enqueue_style( $css_handle );
-		}
-	}
-
-	protected function do_inject_raw_css( $post ) {
-		$css = $this->get_own_schema()['css'] ?? null;
-		if ( $css ) {
-			$css_path = $this->get_own_schema()['_path'] . '/' . $css;
-			$css_handle = 'elementor-atomic-custom-css-' . $this->get_title();
-			wp_register_style(
-				$css_handle,
-				$css_path,
-				[],
-				ELEMENTOR_VERSION,
-			);
 		}
 	}
 
@@ -178,16 +194,62 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 			$script_path = $assets_path . '/' . $script;
 			$wp_content_dir = WP_CONTENT_DIR;
 			$site_url = get_site_url();
-			$relative_path = str_replace( $wp_content_dir, '', $script_path );
-			$script_path = $site_url . '/wp-content' . $relative_path;
+			if ( str_contains( $script_path, ELEMENTOR_PATH ) ) {
+				$script_path = str_replace( ELEMENTOR_PATH, ELEMENTOR_URL, $script_path );
+			} else {
+				$relative_path = str_replace( $wp_content_dir, '', $script_path );
+				$script_path = $site_url . '/wp-content' . $relative_path;
+			}
 			$script_handle = 'elementor-atomic-custom-script-' . $alias . '-' . $script;
+			wp_enqueue_script( 'elementor-v2-frontend-handlers' );
 			wp_register_script(
 				$script_handle,
 				$script_path,
-				[ 'elementor-v2-frontend-handlers' ],
+				[ 'elementor-v2-frontend-handlers', 'elementor-frontend' ],
 				ELEMENTOR_VERSION,
+				[
+					'strategy' => 'defer',
+					'in_footer' => true,
+				]
 			);
 			wp_enqueue_script( $script_handle );
 		}
+	}
+
+	protected function process_html_output( string $output, bool $print = false ): string {
+		$renderer = new User_Defined_Html_Renderer( $output );
+		$render_result = $renderer->render( $this->build_default_render_context(), $this );
+		$document = $render_result['document']->cloneNode( true );
+		$host_element = $render_result['host_element']->cloneNode( true );
+		$document->adoptNode( $host_element );
+		$document->appendChild( $host_element );
+		$injector = new Element_Injector( $document, $host_element );
+		$added_widgets = $injector->execute();
+		foreach ( $added_widgets as $widget ) {
+			$element_data = $widget->get_raw_data();
+			$element_data['elType'] = $widget->get_type();
+			$element_data['widgetType'] = $widget->get_name();
+			$this->add_child( $element_data, $widget->get_raw_data() );
+		}
+		$html = $document->saveHTML( $host_element );
+		if ( $print ) {
+			echo $html;
+		}
+		return $html;
+	}
+
+	protected function _get_default_child_type( array $element_data ) {
+		return Plugin::$instance->elements_manager->get_element_types( $element_data['elType'] );
+	}
+
+	protected function render() {
+		$render_function = static::get_render_function();
+		$render_context = $this->build_default_render_context();
+		if ( $render_function ) {
+			$result = $render_function( $render_context, $this );
+		} else {
+			$result = $this->render_default();
+		}
+		$this->process_html_output( $result, true );
 	}
 }

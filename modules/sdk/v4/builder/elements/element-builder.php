@@ -6,7 +6,11 @@ use Elementor\Core\Utils\Registry;
 use Elementor\Modules\Sdk\V4\Builder\I_Element_Builder;
 use Elementor\Plugin;
 
+// error_reporting(E_ALL & ~E_WARNING & ~E_DEPRECATED & ~E_USER_DEPRECATED & ~E_NOTICE);
+
+
 class Element_Builder implements I_Element_Builder {
+
 
 	private array $schema = [];
 	private User_Defined_Atomic_Element|null $widget_instance;
@@ -45,13 +49,20 @@ class Element_Builder implements I_Element_Builder {
 		}
 	}
 
+	protected function generate_class_name() {
+		$widget_schema = $this->validator->get_schema();
+		$class_name = 'USER_DEFINED_WIDGET_' . $widget_schema['widget_alias'];
+		$class_name = str_replace( '-', '_', $class_name );
+		return $class_name;
+	}
+
 	public function build(): void {
 		$this->pre_build();
 		$this->validator->validate();
 		$widget_schema = $this->validator->get_schema();
 		$assets_dir = $widget_schema['_path'];
 		$ns = __NAMESPACE__;
-		$class_name = 'USER_DEFINED_WIDGET_' . $widget_schema['widget_alias'];
+		$class_name = $this->generate_class_name();
 		$code = "class {$class_name} extends {$ns}\User_Defined_Atomic_Element {}";
 		eval( $code );
 		Registry::instance( 'atomic-custom-schemas' )->set( $class_name, $widget_schema );
@@ -63,11 +74,27 @@ class Element_Builder implements I_Element_Builder {
 	}
 
 	public function set_render_function( callable $render_function ): void {
-		Registry::instance( 'atomic-custom-render-functions' )->set( $this->widget_instance->get_class_name(), $render_function );
+		$class_name = $this->generate_class_name();
+		Registry::instance( 'atomic-custom-render-functions' )->set( $class_name, $render_function );
 	}
 
 	public function set_assets_dir( string $dir ): void {
 		$this->validator->set_assets_dir( $dir );
+	}
+
+	public function set_property( string $property_name, array $property_def ) {
+		$property_def['name'] = $property_name;
+		if ( ! isset( $this->schema['properties'] ) ) {
+			$this->schema['properties'] = [];
+		}
+		$this->schema['properties'][] = $property_def;
+	}
+
+	public function set_properties( array $properties ) {
+		if ( ! isset( $this->schema['properties'] ) ) {
+			$this->schema['properties'] = [];
+		}
+		$this->schema['properties'] = array_merge( $this->schema['properties'], $properties );
 	}
 
 	public function set( string $key, mixed $value ): void {

@@ -3,8 +3,10 @@
 namespace Elementor\Modules\Sdk\V4\Builder\Elements;
 
 use Elementor\Modules\AtomicWidgets\Base\Atomic_Control_Base;
+use Elementor\Modules\AtomicWidgets\Controls\Types\Color_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Image_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Link_Control;
+use Elementor\Modules\AtomicWidgets\Controls\Types\Repeatable_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Select_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Text_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Textarea_Control;
@@ -13,6 +15,8 @@ use Elementor\Modules\AtomicWidgets\PropTypes\Link_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\Boolean_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
 use Elementor\Modules\AtomicWidgets\Image\Placeholder_Image;
+use Elementor\Modules\AtomicWidgets\PropTypes\Key_Value_Array_Prop_Type;
+use Elementor\Modules\Sdk\V4\Builder\Elements\Props\Array_List_Type;
 use Elementor\Modules\Sdk\V4\Builder\SUPPORTED_PROPERTY_TYPES;
 use Exception;
 
@@ -25,17 +29,28 @@ class Controls_Builder {
 		$this->schema = $properties;
 	}
 
-	public function build_control( $property ): Atomic_Control_Base|null {
+	/**
+	 * @param array $property
+	 * @return Atomic_Control_Base[]
+	 */
+	public function build_control( $property ): array {
 		$name        = $property['name'];
 		$type        = $property['type'] ?? null;
 		$label       = $property['label'] ?? $name;
 		$placeholder = $property['placeholder'] ?? null;
+		$controls    = [];
 		$control     = null;
 		SUPPORTED_PROPERTY_TYPES::is( $type );
 		switch ( $type ) {
 			case 'image':
-				$control = Image_Control::bind_to( $name );
-				$control->set_show_mode( 'media' );
+				$img_control = Image_Control::bind_to( $name );
+				$img_control->set_show_mode( 'media' );
+				$size_control = Image_Control::bind_to( $name )
+					->set_show_mode( 'sizes' )
+					->set_label( __( 'Image resolution', 'elementor' ) )
+					->set_meta( [ 'layout' => 'two-columns' ] );
+				$controls[] = $img_control;
+				$controls[] = $size_control;
 				break;
 			case 'link':
 				$control = Link_Control::bind_to( $name );
@@ -48,19 +63,46 @@ class Controls_Builder {
 				$control = Select_Control::bind_to( $name );
 				$control->set_options( $property['options'] ?? [] );
 				break;
+			case 'color':
+				$control = Color_Control::bind_to( $name );
+				$control->set_label( $label );
+				break;
 			case 'text_area':
 				$control = Textarea_Control::bind_to( $name );
 				$control->set_placeholder( $placeholder );
 				break;
+			case 'array':
+				$control = Repeatable_Control::bind_to( $name );
+				$control->set_child_control_type( $property['array_type'] );
+				$control->set_repeaterLabel( $label );
+				$control->hide_duplicate();
+				$control->hide_toggle();
+				$child_prop_type = String_Prop_Type::make();
+				switch ( $property['array_type'] ) {
+					case 'image':
+						$child_prop_type = Image_Prop_Type::make();
+						break;
+				}
+				$control->set_initialValues( $property['default_item_value'] ?? $child_prop_type->get_default() );
+				$control->set_placeholder( $placeholder ?? $label );
+				$control->set_patternLabel( 'Add new item' );
+				$control->set_child_control_props( $child_prop_type );
+				break;
 			default:
 				throw new Exception( "Unsupported property type: {$type}" );
 		}
-		$control->set_label( $label );
-		$meta = $property['meta'] ?? [];
-		if ( ! empty( $meta ) ) {
-			$control->set_meta( $meta );
+		if ( $control ) {
+			$controls[] = $control;
 		}
-		return $control;
+		if ( count( $controls ) === 1 ) {
+			$control = $controls[0];
+			$control->set_label( $label );
+			$meta = $property['meta'] ?? [];
+			if ( ! empty( $meta ) ) {
+				$control->set_meta( $meta );
+			}
+		}
+		return $controls;
 	}
 
 	public function build_props_schema() {
@@ -70,13 +112,31 @@ class Controls_Builder {
 			$name            = $property['name'] ?? '';
 			$result[ $name ] = $this->build_property( $property );
 		}
+		if ( ! isset( $result['attributes'] ) ) {
+			$result['attributes'] = Key_Value_Array_Prop_Type::make();
+		}
 		return $result;
+	}
+
+	protected function build_array_property( $property ) {
+		$type = $property['array_type'] ?? null;
+		$default_value = $property['default_item_value'] ?? null;
+		switch ( $type ) {
+			case 'image':
+				return Array_List_Type::make_generic( Image_Prop_Type::make()->default( $default_value ) );
+			case 'text':
+				return Array_List_Type::make_generic( String_Prop_Type::make()->default( $default_value ?? '' ) );
+			default:
+				throw new Exception( "Unsupported array type: {$type}" );
+		}
 	}
 
 	protected function build_property( $property ) {
 		$type          = $property['type'] ?? null;
 		$default_value = $property['default'] ?? null;
 		switch ( $type ) {
+			case 'array':
+				return $this->build_array_property( $property )->default( $default_value ?? [] );
 			case 'boolean':
 			case 'bool':
 			case 'switch':
@@ -102,8 +162,11 @@ class Controls_Builder {
 				return String_Prop_Type::make()
 					->default( $default_value ?? null );
 			case 'link':
-				return Link_Prop_Type::make()
-					->default( $default_value ?? null );
+				$prop = Link_Prop_Type::make();
+				if ( ! is_null( $default_value ) ) {
+					$prop->default( $default_value );
+				}
+				return $prop;
 		}
 	}
 }

@@ -53,8 +53,8 @@ class Element_Schema_Validator {
 		$schema = &$this->get_schema();
 		$schema['name'] = $name;
 		// Setup widget-alias
-		$widget_alias = str_replace( '-', '_', $name );
-		$widget_alias = str_replace( ' ', '_', $widget_alias );
+		$widget_alias = str_replace( '_', '-', $name );
+		$widget_alias = str_replace( ' ', '-', $widget_alias );
 		$widget_alias = strtolower( $widget_alias );
 		$schema['widget_alias'] = $widget_alias;
 		return $this;
