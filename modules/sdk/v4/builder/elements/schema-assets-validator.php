@@ -6,13 +6,13 @@ trait Schema_Assets_Validator {
 
 	protected function verify_file_exists( $file ) {
 		if ( ! file_exists( $file ) || ! is_file( $file ) ) {
-			throw new \InvalidArgumentException( "File {$file} does not exist or not a file" );
+			throw new \InvalidArgumentException( esc_html( "File {$file} does not exist or not a file" ) );
 		}
 	}
 
 	protected function verify_dir_exists( $dir ) {
 		if ( ! file_exists( $dir ) || ! is_dir( $dir ) ) {
-			throw new \InvalidArgumentException( "Directory {$dir} does not exist or not a directory" );
+			throw new \InvalidArgumentException( esc_html( "Directory {$dir} does not exist or not a directory" ) );
 		}
 	}
 

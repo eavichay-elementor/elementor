@@ -12,12 +12,14 @@ use Elementor\Modules\AtomicWidgets\Styles\Style_Variant;
 
 use Elementor\Plugin;
 
+// phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting, WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
 error_reporting( E_ALL & ~E_WARNING & ~E_DEPRECATED & ~E_USER_DEPRECATED & ~E_NOTICE );
 
 class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 
 	protected $controls_by_category = [];
 
+	// phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
 	protected $_has_template_content = false;
 
 	use Has_Template {
@@ -100,14 +102,6 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		$style_def = Style_Definition::make();
 		$style_variant = Style_Variant::make();
 		$style_def->add_variant( $style_variant );
-		// TODO: this is not yet complete work
-		// if ($schema['style'] ?? false) {
-		// $styles_builder = new Styles_Builder($schema);
-		// $props = $styles_builder->build();
-		// foreach ($props as $prop) {
-		// $style_variant->add_prop(...$prop);
-		// }
-		// }
 		return [
 			'base' => $style_def,
 		];
@@ -216,7 +210,7 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		}
 	}
 
-	protected function process_html_output( string $output, bool $print = false ): string {
+	protected function process_html_output( string $output, bool $print_output = false ): string {
 		$renderer = new User_Defined_Html_Renderer( $output );
 		$render_result = $renderer->render( $this->build_default_render_context(), $this );
 		$document = $render_result['document']->cloneNode( true );
@@ -232,12 +226,13 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 			$this->add_child( $element_data, $widget->get_raw_data() );
 		}
 		$html = $document->saveHTML( $host_element );
-		if ( $print ) {
+		if ( $print_output ) {
 			echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 		return $html;
 	}
 
+	// phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
 	protected function _get_default_child_type( array $element_data ) {
 		return Plugin::$instance->elements_manager->get_element_types( $element_data['elType'] );
 	}

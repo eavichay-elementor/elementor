@@ -25,6 +25,6 @@ enum SUPPORTED_PROPERTY_TYPES: string {
 				return $value;
 			}
 		}
-		throw new Exception( "Unsupported property type {$value}" );
+		throw new Exception( esc_html( "Unsupported property type {$value}" ) );
 	}
 }

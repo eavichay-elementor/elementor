@@ -47,7 +47,7 @@ trait Schema_Properties_Validator {
 		}
 
 		// In case of select - validate as select
-		if ( $property['type'] === 'select' ) {
+		if ( 'select' === $property['type'] ) {
 			$this->validate_select_property( $property );
 		}
 	}

@@ -41,6 +41,7 @@ class Element_Builder implements I_Element_Builder {
 		$has_template = isset( $schema['template'] );
 		$check_required = $has_script || $has_css || $has_template;
 		if ( $check_required && ! isset( $schema['_path'] ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 			$trace = debug_backtrace();
 			$caller_file = $trace[1]['file'];
 			$this->set_assets_dir( dirname( $caller_file ) );

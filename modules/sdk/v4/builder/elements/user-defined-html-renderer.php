@@ -36,6 +36,7 @@ class User_Defined_Html_Renderer {
 		$fragment = $dom_document->createDocumentFragment();
 		$fragment->appendXml( $this->raw_input );
 		$fragment->normalize();
+        // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		$child_count = $fragment->childElementCount;
 		$host_element = new DOMElement( 'span' );
 		$dom_document->importNode( $host_element, true );
@@ -47,9 +48,11 @@ class User_Defined_Html_Renderer {
 			// wrap all children in a host <span> element
 			$host_element->setAttribute( 'data-elementor-wrapper', '' );
 			while ( $fragment->hasChildNodes() > 0 ) {
+                // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 				$host_element->appendChild( $fragment->firstChild );
 			}
 		} else {
+            // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			$host_element = $fragment->firstChild;
 		}
 		$host_element = $this->is_html_element( $host_element );

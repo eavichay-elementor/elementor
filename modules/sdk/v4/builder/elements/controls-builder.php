@@ -89,7 +89,7 @@ class Controls_Builder {
 				$control->set_child_control_props( $child_prop_type );
 				break;
 			default:
-				throw new Exception( "Unsupported property type: {$type}" );
+				throw new Exception( esc_html( "Unsupported property type: {$type}" ) );
 		}
 		if ( $control ) {
 			$controls[] = $control;
@@ -127,7 +127,7 @@ class Controls_Builder {
 			case 'text':
 				return Array_List_Type::make_generic( String_Prop_Type::make()->default( $default_value ?? '' ) );
 			default:
-				throw new Exception( "Unsupported array type: {$type}" );
+				throw new Exception( esc_html( "Unsupported array type: {$type}" ) );
 		}
 	}
 
