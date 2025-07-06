@@ -122,7 +122,7 @@ class Widgets_Manager {
 		include ELEMENTOR_PATH . 'includes/widgets/v4/widgets-autoloader.php';
 		\Elementor\V4\Widgets_Autoloader::load();
 
-		do_action('elementor/widgets/register-atoms', $this);
+		do_action( 'elementor/widgets/register-atoms', $this );
 
 		foreach ( $build_widgets_filename as $widget_filename ) {
 			include ELEMENTOR_PATH . 'includes/widgets/' . $widget_filename . '.php';
@@ -255,9 +255,8 @@ class Widgets_Manager {
 		return $this->register( $widget );
 	}
 
-	public function widget_builder($name = ''): Element_Builder
-	{
-		return new Element_Builder($name);
+	public function widget_builder( $name = '' ): Element_Builder {
+		return new Element_Builder( $name );
 	}
 
 	/**

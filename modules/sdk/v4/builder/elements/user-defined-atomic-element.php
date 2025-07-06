@@ -12,7 +12,7 @@ use Elementor\Modules\AtomicWidgets\Styles\Style_Variant;
 
 use Elementor\Plugin;
 
-error_reporting(E_ALL & ~E_WARNING & ~E_DEPRECATED & ~E_USER_DEPRECATED & ~E_NOTICE);
+error_reporting( E_ALL & ~E_WARNING & ~E_DEPRECATED & ~E_USER_DEPRECATED & ~E_NOTICE );
 
 class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 
