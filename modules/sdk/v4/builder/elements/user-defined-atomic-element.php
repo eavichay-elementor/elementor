@@ -26,8 +26,6 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		get_initial_config as protected trait_get_initial_config;
 	}
 
-	// use Has_Template;
-
 	public static function get_render_functions_registry() {
 		return Registry::instance( 'atomic-custom-render-functions' );
 	}
@@ -87,7 +85,7 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		$all_sections = $this->controls_by_category;
 		$sections = [];
 		foreach ( $all_sections as $category => $controls ) {
-			if ( $category === 'Settings' ) {
+			if ('settings' === $category) {
 				continue;
 			}
 			$section = Section::make()->set_label( $category );
@@ -235,6 +233,7 @@ class User_Defined_Atomic_Element extends Atomic_Widget_Base {
 		}
 		$html = $document->saveHTML( $host_element );
 		if ( $print ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			echo $html;
 		}
 		return $html;
