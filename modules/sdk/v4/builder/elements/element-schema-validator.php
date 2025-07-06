@@ -49,7 +49,10 @@ class Element_Schema_Validator {
 	}
 
 	public function get_widget_alias(): string {
-		return $this->schema['widget_alias'] ?? throw new Exception( 'Schema must have a widget_alias' );
+		if ( ! isset( $this->schema['widget_alias'] ) ) {
+			throw new Exception( esc_html( 'Schema must have a widget_alias' ) );
+		}
+		return $this->schema['widget_alias'];
 	}
 
 	public function set_element_name( string $name ): self {
