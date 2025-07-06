@@ -6,8 +6,6 @@ use Elementor\Core\Utils\Registry;
 use Elementor\Modules\Sdk\V4\Builder\I_Element_Builder;
 use Elementor\Plugin;
 
-// error_reporting(E_ALL & ~E_WARNING & ~E_DEPRECATED & ~E_USER_DEPRECATED & ~E_NOTICE);
-
 
 class Element_Builder implements I_Element_Builder {
 
