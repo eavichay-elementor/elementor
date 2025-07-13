@@ -1,6 +1,6 @@
 <?php
 
-namespace Elementor\Modules\Sdk\V4\Builder;
+namespace Elementor\Modules\Sdk\V4;
 
 use Exception;
 

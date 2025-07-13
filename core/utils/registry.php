@@ -11,6 +11,10 @@ class Registry {
 	private static $namespaced_regsitries = [];
 	private $store = [];
 
+	public static function get_value(string $ns, string $key, mixed $default = null) {
+		return self::instance($ns)->get($key) ?? $default;
+	}
+
 	/**
 	 * @returns Registry<T>
 	 */

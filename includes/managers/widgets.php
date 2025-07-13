@@ -14,6 +14,8 @@ use Elementor\Modules\NestedAccordion\Widgets\Nested_Accordion;
 use Elementor\Modules\NestedElements\Module as NestedElementsModule;
 use Elementor\Modules\NestedTabs\Widgets\NestedTabs;
 use Elementor\Modules\Sdk\V4\Builder\Elements\Element_Builder;
+use Elementor\V4\Widgets\Builders\Factory;
+use Reflection;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -121,9 +123,7 @@ class Widgets_Manager {
 
 		include ELEMENTOR_PATH . 'includes/widgets/v4/widgets-autoloader.php';
 		\Elementor\V4\Widgets_Autoloader::load();
-
-		do_action( 'elementor/widgets/register-atoms', $this );
-
+		
 		foreach ( $build_widgets_filename as $widget_filename ) {
 			include ELEMENTOR_PATH . 'includes/widgets/' . $widget_filename . '.php';
 
@@ -133,6 +133,8 @@ class Widgets_Manager {
 
 			$this->register( new $class_name() );
 		}
+
+		do_action('elementor/widgets/define', Factory::get_instance());
 
 		$this->register_wp_widgets();
 
