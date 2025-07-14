@@ -11,7 +11,10 @@ use Elementor\Modules\AtomicWidgets\Styles\Style_Definition;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Variant;
 
 class Configurable_Atomic_Element extends Atomic_Widget_Base {
-    use Has_Template;
+    use Has_Template {
+        render as protected _render;
+    }
+    
     public static function get_namespace() {
         return __NAMESPACE__;
     }
@@ -28,20 +31,35 @@ class Configurable_Atomic_Element extends Atomic_Widget_Base {
 
     protected $_template_contents_cache = null;
 
+    public function get_script_depends(): array {
+        $handle = $this->prepare_scripts();
+        if (null !== $handle) {
+            return [$handle];
+        }
+        return [];
+    }
+
+    public function get_style_depends(): array {
+        $handle = $this->prepare_styles();
+        if (null !== $handle) {
+            return [$handle];
+        }
+        return [];
+    }
+
     protected function get_templates(): array {
-        if (null === $this->_template_contents_cache) {
+        $template_contents = Registry::get_value('elementor/widget-template', static::class, null);
+        if (null === $template_contents) {
             $builder = Registry::get_value('elementor/widget-builders', static::class, null);
             $builder->build_renderer();
             $twig_file_path = Registry::instance('elementor/widget-twig')->get(static::class);
-            $css_file_path = Registry::instance('elementor/widget-css')->get(static::class);
-            if ($twig_file_path) {
-                $twig_key = 'elementor/templates/' . static::class . '/twig';
-                $this->_template_contents_cache = [
-                    $twig_key => $twig_file_path,
-                ];
-            }
+            $twig_key = 'elementor/templates/' . static::class . '/twig';
+            $template_contents = [
+                $twig_key => $twig_file_path
+            ];
+            Registry::instance('elementor/widget-template')->set(static::class, $template_contents);
         }
-        return $this->_template_contents_cache ?? [];
+        return $template_contents ?? [];
     }
 
 
@@ -91,15 +109,6 @@ class Configurable_Atomic_Element extends Atomic_Widget_Base {
         return $props_schema;
     }
 
-    protected function build_default_render_context() {
-		return [
-			'id' => $this->get_id(),
-			'type' => $this->get_name(),
-			'settings' => $this->get_atomic_settings(),
-			'base_styles' => $this->get_base_styles_dictionary(),
-		];
-	}
-
     protected function define_base_styles(): array {
         $base_styles = Registry::get_value('elementor/widget-base-styles', static::class, null);
         if (null === $base_styles) {
@@ -110,5 +119,61 @@ class Configurable_Atomic_Element extends Atomic_Widget_Base {
             ];
         }
         return $base_styles;
+    }
+
+    protected function prepare_scripts() {
+        $js_file_path = Registry::get_value('elementor/widget-js', static::class, null);
+        if (null === $js_file_path) {
+            $builder = Registry::get_value('elementor/widget-builders', static::class, null);
+            $builder->build_renderer_js_only();
+        }
+        $js_file_path = Registry::get_value('elementor/widget-js', static::class, null);
+        if ($js_file_path) {
+            $widget_name = $this->get_widget_schema()['name'];
+            $js_handle = 'atomic-element-' . $widget_name;
+            if (str_contains($js_file_path, ELEMENTOR_PATH)) {
+                $js_file_path = str_replace(ELEMENTOR_PATH, ELEMENTOR_URL, $js_file_path);
+            } else if (str_contains($js_file_path, WP_CONTENT_DIR)) {
+                $js_file_path = str_replace(WP_CONTENT_DIR, WP_CONTENT_URL, $js_file_path);
+            }
+            wp_enqueue_script('elementor-v2-frontend-handlers');
+            wp_register_script($js_handle, $js_file_path, ['elementor-v2-frontend-handlers'], ELEMENTOR_VERSION, 
+                [
+                    'in_footer' => true,
+                    'strategy' => 'defer',
+                ]
+            );
+            return $js_handle;
+        }
+        return null;
+    }
+
+    protected function prepare_styles() {
+        $builder = Registry::get_value('elementor/widget-builders', static::class, null);
+        $builder->build_styles_only();
+        $css_file_path = Registry::get_value('elementor/widget-css', static::class, null);
+        if ($css_file_path) {
+            // check if related to elementor or wp-content
+            if (str_contains($css_file_path, ELEMENTOR_PATH)) {
+                $css_file_path = str_replace(ELEMENTOR_PATH, ELEMENTOR_URL, $css_file_path);
+            } else if (str_contains($css_file_path, WP_CONTENT_DIR)) {
+                $css_file_path = str_replace(WP_CONTENT_DIR, WP_CONTENT_URL, $css_file_path);
+            }
+            $widget_name = $this->get_widget_schema()['name'];
+            $css_handle = 'atomic-element-' . $widget_name;
+            wp_register_style($css_handle, $css_file_path);
+            return $css_handle;
+        }
+        return null;
+    }
+
+    protected function render() {
+        $extra_context = [
+            'attributes' => "data-e-type=\"{$this->get_element_type()}\"",
+        ];
+        $err_level = error_reporting();
+        error_reporting(0);
+        $this->_render($extra_context);
+        error_reporting($err_level);
     }
 }

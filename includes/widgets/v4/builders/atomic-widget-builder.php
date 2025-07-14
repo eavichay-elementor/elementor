@@ -5,7 +5,9 @@ namespace Elementor\V4\Widgets\Builders;
 use Elementor\Core\Utils\Registry;
 use Elementor\Modules\AtomicWidgets\PropTypes\Classes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Contracts\Prop_Type;
-use Elementor\Modules\AtomicWidgets\PropTypes\Key_Value_Prop_Type;
+use Elementor\Modules\AtomicWidgets\PropTypes\Key_Value_Array_Prop_Type;
+use Elementor\Modules\Variables\Storage\Exceptions\FatalError;
+use Elementor\Utils;
 use Elementor\V4\Widgets\Builders\Implementations\Atomic\Atomic_Controls_Builder;
 use Elementor\V4\Widgets\Builders\Implementations\Atomic\Atomic_Prop_Type_Builder;
 use Elementor\V4\Widgets\Builders\Implementations\Atomic\Configurable_Atomic_Element;
@@ -112,12 +114,10 @@ class Atomic_Widget_Builder {
     public function build_props_schema(): void {
         $this->widget_descriptor->define_properties($this);
         $props = array_map(fn ($builder) => $builder->build(), $this->prop_builders);
-        if (!isset($props['attributes'])) {
-            $props['attributes'] = Key_Value_Prop_Type::make();
-        }
-        if (!isset($props['classes'])) {
-            $props['classes'] = Classes_Prop_Type::make()->default([]);
-        }
+        
+        // force attributes and classes to be defined
+        $props['attributes'] = Key_Value_Array_Prop_Type::make();
+        $props['classes'] = Classes_Prop_Type::make()->default([]);
         Registry::instance('elementor/widget-prop-schema')->set($this->widget_class_name, $props);
     }
 
@@ -126,29 +126,39 @@ class Atomic_Widget_Builder {
      */
     protected $prop_builders = [];
     public function property(string $name): Atomic_Prop_Type_Builder {
+        $restricted_property_names = [
+            'classes', 'attributes',
+        ];
+        if (in_array($name, $restricted_property_names)) {
+            trigger_error("Property name \"{$name}\" is restricted", E_USER_ERROR);
+        }
         $prop_builder = new Atomic_Prop_Type_Builder($name);
         $this->prop_builders[$name] = $prop_builder;
         return $prop_builder;
     }
 
+    public function build_renderer_js_only() {
+        $render_schema = [];
+        $facade = create_renderer_facade($render_schema);
+        $this->widget_descriptor->define_renderer($facade);
+        if (isset($render_schema['js'])) {
+            Registry::instance('elementor/widget-js')->set($this->widget_class_name, $render_schema['js']);
+        }
+    }
+
+    public function build_styles_only() {
+        $render_schema = [];
+        $facade = create_renderer_facade($render_schema);
+        $this->widget_descriptor->define_renderer($facade);
+        if (isset($render_schema['css'])) {
+            Registry::instance('elementor/widget-css')->set($this->widget_class_name, $render_schema['css']);
+        }
+    }
+
 
     public function build_renderer() {
         $render_schema = [];
-        $facade = new class($render_schema) {
-            public $schema;
-            public function __construct(&$render_schema)
-            {
-                $this->schema = &$render_schema;
-            }
-            public function twig(string $template) {
-                $this->schema['twig'] = $template;
-                return $this;
-            }
-            public function css(string $css) {
-                $this->schema['css'] = $css;
-                return $this;
-            }
-        };
+        $facade = create_renderer_facade($render_schema);
         $this->widget_descriptor->define_renderer($facade);
         if (isset($render_schema['twig'])) {
             Registry::instance('elementor/widget-twig')->set($this->widget_class_name, $render_schema['twig']);
@@ -156,6 +166,32 @@ class Atomic_Widget_Builder {
         if (isset($render_schema['css'])) {
             Registry::instance('elementor/widget-css')->set($this->widget_class_name, $render_schema['css']);
         }
+        if (isset($render_schema['js'])) {
+            Registry::instance('elementor/widget-js')->set($this->widget_class_name, $render_schema['js']);
+        }
     }
 
+}
+
+function create_renderer_facade(array &$schema) {
+    $facade = new class($schema) {
+        public $schema;
+        public function __construct(&$render_schema)
+        {
+            $this->schema = &$render_schema;
+        }
+        public function twig(string $template) {
+            $this->schema['twig'] = $template;
+            return $this;
+        }
+        public function js(string $js) {
+            $this->schema['js'] = $js;
+            return $this;
+        }
+        public function css(string $css) {
+            $this->schema['css'] = $css;
+            return $this;
+        }
+    };
+    return $facade;
 }

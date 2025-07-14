@@ -2,7 +2,11 @@
 
 namespace Elementor\V4\Widgets\Builders\Implementations\Atomic;
 
+use Elementor\Modules\AtomicWidgets\Image\Placeholder_Image;
 use Elementor\Modules\AtomicWidgets\PropTypes\Contracts\Prop_Type;
+use Elementor\Modules\AtomicWidgets\PropTypes\Image_Prop_Type;
+use Elementor\Modules\AtomicWidgets\PropTypes\Link_Prop_Type;
+use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\Boolean_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
 use Elementor\Modules\Sdk\V4\Property_Def_Context;
 use Elementor\Modules\Sdk\V4\SUPPORTED_PROPERTY_TYPES;
@@ -67,9 +71,28 @@ class Atomic_Prop_Type_Builder implements Property_Def_Context {
                 }
                 $prop->enum($resolved_values);
                 return $prop;
+            case 'boolean':
+            case 'bool':
+            case 'switch':
+                return Boolean_Prop_Type::make()->default($schema['default'] ?? false);
             case 'text':
             case 'text_area':
                 return String_Prop_Type::make()->default($schema['default'] ?? '');
+            case 'image':
+                $prop = Image_Prop_Type::make();
+                if (isset($schema['default'])) {
+                    $prop->default_url($schema['default']);
+                } else {
+                    $prop->default_url(Placeholder_Image::get_placeholder_image());
+                }
+                $prop->default_size('full');
+                return $prop;
+            case 'link':
+                $prop = Link_Prop_Type::make();
+                if (isset($schema['default'])) {
+                    $prop->default($schema['default']);
+                }
+                return $prop;
             default:
                 throw new \Exception("Unsupported property type: $kind");
         }
