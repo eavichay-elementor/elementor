@@ -114,7 +114,7 @@ class Configurable_Atomic_Element extends Atomic_Widget_Base {
         if (null === $base_styles) {
             return [
                 'base' => Style_Definition::make()->add_variant(
-                    Style_Variant::make()->add_prop('all', 'unset')
+                    Style_Variant::make()->add_prop('display', 'initial')
                 ),
             ];
         }
@@ -169,11 +169,14 @@ class Configurable_Atomic_Element extends Atomic_Widget_Base {
 
     protected function render() {
         $extra_context = [
-            'attributes' => "data-e-type=\"{$this->get_element_type()}\"",
+            'e_attrs' => "data-e-type={$this->get_element_type()}",
         ];
         $err_level = error_reporting();
         error_reporting(0);
+        ob_start();
         $this->_render($extra_context);
+        $output = ob_get_clean();
         error_reporting($err_level);
+        echo $output;
     }
 }
