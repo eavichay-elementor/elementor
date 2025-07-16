@@ -27,13 +27,13 @@ export function init() {
 		const { id, type } = event.detail;
 
 		onElementDestroy( { elementType: type, elementId: id } );
-	} );
-
-	document.addEventListener( 'DOMContentLoaded', () => {
+	});
+	
+	const handleDOMContentLoaded = () => {
 		document.querySelectorAll( '[data-e-type]' ).forEach( ( element ) => {
 			const el = element as HTMLElement;
 
-			const { eType, id } = el.dataset;
+			const { eType, id = el.id } = el.dataset;
 
 			if ( ! eType || ! id ) {
 				return;
@@ -49,5 +49,10 @@ export function init() {
 				} )
 			);
 		} );
-	} );
+	}
+
+	document.addEventListener('DOMContentLoaded', () => handleDOMContentLoaded());
+	if (document.readyState === 'complete') {
+		handleDOMContentLoaded();
+	}
 }

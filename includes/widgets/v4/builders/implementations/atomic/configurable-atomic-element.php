@@ -13,7 +13,7 @@ use Elementor\Modules\AtomicWidgets\Styles\Style_Variant;
 class Configurable_Atomic_Element extends Atomic_Widget_Base {
     use Has_Template {
         render as protected _render;
-    }
+	}
     
     public static function get_namespace() {
         return __NAMESPACE__;
