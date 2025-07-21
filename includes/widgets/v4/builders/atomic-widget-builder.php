@@ -6,8 +6,7 @@ use Elementor\Core\Utils\Registry;
 use Elementor\Modules\AtomicWidgets\PropTypes\Classes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Contracts\Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Key_Value_Array_Prop_Type;
-use Elementor\Modules\Variables\Storage\Exceptions\FatalError;
-use Elementor\Utils;
+use Elementor\V4\Runtime\Renderer\Atomic_Renderer;
 use Elementor\V4\Widgets\Builders\Implementations\Atomic\Atomic_Controls_Builder;
 use Elementor\V4\Widgets\Builders\Implementations\Atomic\Atomic_Prop_Type_Builder;
 use Elementor\V4\Widgets\Builders\Implementations\Atomic\Configurable_Atomic_Element;
@@ -15,6 +14,7 @@ use Elementor\V4\Widgets\Builders\Implementations\Atomic\Configurable_Atomic_Ele
 require_once __DIR__ . '/implementations/atomic/configurable-atomic-element.php';
 require_once __DIR__ . '/implementations/atomic/atomic-prop-type-builder.php';
 require_once __DIR__ . '/implementations/atomic/atomic-controls-buider.php';
+require_once __DIR__ . '../../runtime/renderer/atomic-renderer.php';
 
 class Atomic_Widget_Builder {
 
@@ -137,61 +137,31 @@ class Atomic_Widget_Builder {
         return $prop_builder;
     }
 
-    public function build_renderer_js_only() {
-        $render_schema = [];
-        $facade = create_renderer_facade($render_schema);
-        $this->widget_descriptor->define_renderer($facade);
-        if (isset($render_schema['js'])) {
-            Registry::instance('elementor/widget-js')->set($this->widget_class_name, $render_schema['js']);
+    protected $atomic_renderer;
+
+    public function get_renderer() {
+        $this->ensure_atomic_renderer();
+        return $this->atomic_renderer;
+    }
+
+    protected function ensure_atomic_renderer() {
+        if (null === $this->atomic_renderer) {
+            $this->atomic_renderer = new Atomic_Renderer($this->widget_class_name);
         }
     }
 
+    public function build_renderer_js_only() {
+        $this->build_renderer();
+    }
+
     public function build_styles_only() {
-        $render_schema = [];
-        $facade = create_renderer_facade($render_schema);
-        $this->widget_descriptor->define_renderer($facade);
-        if (isset($render_schema['css'])) {
-            Registry::instance('elementor/widget-css')->set($this->widget_class_name, $render_schema['css']);
-        }
+        $this->build_renderer();
     }
 
 
     public function build_renderer() {
-        $render_schema = [];
-        $facade = create_renderer_facade($render_schema);
-        $this->widget_descriptor->define_renderer($facade);
-        if (isset($render_schema['twig'])) {
-            Registry::instance('elementor/widget-twig')->set($this->widget_class_name, $render_schema['twig']);
-        }
-        if (isset($render_schema['css'])) {
-            Registry::instance('elementor/widget-css')->set($this->widget_class_name, $render_schema['css']);
-        }
-        if (isset($render_schema['js'])) {
-            Registry::instance('elementor/widget-js')->set($this->widget_class_name, $render_schema['js']);
-        }
+        $this->ensure_atomic_renderer();
+        $this->widget_descriptor->define_renderer($this->atomic_renderer);
     }
 
-}
-
-function create_renderer_facade(array &$schema) {
-    $facade = new class($schema) {
-        public $schema;
-        public function __construct(&$render_schema)
-        {
-            $this->schema = &$render_schema;
-        }
-        public function twig(string $template) {
-            $this->schema['twig'] = $template;
-            return $this;
-        }
-        public function js(string $js) {
-            $this->schema['js'] = $js;
-            return $this;
-        }
-        public function css(string $css) {
-            $this->schema['css'] = $css;
-            return $this;
-        }
-    };
-    return $facade;
 }

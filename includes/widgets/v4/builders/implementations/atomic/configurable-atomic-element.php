@@ -168,13 +168,19 @@ class Configurable_Atomic_Element extends Atomic_Widget_Base {
     }
 
     protected function render() {
+        $builder = Registry::get_value('elementor/widget-builders', static::class, null);
+        $renderer = $builder->get_renderer();
         $extra_context = [
             'e_attrs' => "data-e-type={$this->get_element_type()}",
         ];
         $err_level = error_reporting();
         error_reporting(0);
         ob_start();
-        $this->_render($extra_context);
+        if (method_exists($renderer, 'render')) {
+            $renderer->render($this, $extra_context);
+        } else {
+            $this->_render($extra_context);
+        }
         $output = ob_get_clean();
         error_reporting($err_level);
         echo $output;

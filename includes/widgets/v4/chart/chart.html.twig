@@ -1,0 +1,38 @@
+{% set chart_values = settings.dataset|split(',')|map(v => v * 1) %}
+{% set max_value = max(chart_values) %}
+{% set total = 0 %}
+{% if settings.chart_type == 'pie' %}
+    {% for value in chart_values %}
+        {% set total = total + value %}
+    {% endfor %}
+{% endif %}
+<div {{ e_attrs }}>
+    <table class="charts-css {{settings.chart_type}}">
+    <caption>{{settings.chart_type}}</caption>
+    <thead></thead>
+    <tbody>
+        {% for value in chart_values %}
+        {% set size = value / max_value %}
+        <tr>
+        {% if settings.chart_type == 'pie' %}
+            {% set prev_value = chart_values[loop.index0 - 1] %}
+            {% if prev_value is empty %} {% set prev_value = 0 %} {% endif %}
+            {% set prev_size = prev_value / total %}
+            {% set size = value / total %}
+            <td style="--start:{{prev_size}};--end:{{prev_size + size}};">
+        {% elseif settings.chart_type == 'line' or settings.chart_type == 'area' %}
+            {% set next_size = next_size | trim %}
+            {% set next_value = chart_values[loop.index0 + 1] %}
+            {% if next_value is empty %} {% set next_value = 0 %} {% endif %}
+            {% set next_size = next_value / max_value %}
+            <td style="--start:{{size}};--end:{{next_size}};">
+        {% else %}
+            <td style="--size:{{size}};">
+        {% endif %}
+                <span class="data">{{value}}</span>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+</div>
