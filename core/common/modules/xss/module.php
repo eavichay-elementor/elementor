@@ -7,7 +7,7 @@ use WP_REST_Request;
 class Module {
 
 	/**
-	 * @property {XSSDetector}
+	 * @property {Module}
 	 */
 	private static $_instance;
 
@@ -24,6 +24,7 @@ class Module {
 	}
 
 	public function check_post_data( $post, WP_REST_Request $request ) {
+		// NOTE: This utility prefents from users without the unfiltered_html permission to create/update Elementor posts via wordpress REST api with unallowed tags
 		if ( current_user_can( 'unfiltered_html' ) ) {
 			return $post;
 		}
@@ -49,8 +50,4 @@ class Module {
 		return $post;
 	}
 
-	private function has_XSS( $document ): bool {
-		$document;
-		return false;
-	}
 }
