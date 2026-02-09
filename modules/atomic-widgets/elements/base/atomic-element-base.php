@@ -206,10 +206,16 @@ abstract class Atomic_Element_Base extends Element_Base {
 	 * @return void
 	 */
 	public function before_render() {
-		?>
-		<<?php $this->print_html_tag(); ?> <?php $this->print_render_attribute_string( '_wrapper' );
-		$this->print_custom_attributes(); ?>>
-		<?php
+		echo '<';
+		$this->print_html_tag();
+		echo ' ';
+		$this->print_render_attribute_string( '_wrapper' );
+		$this->print_custom_attributes();
+		echo '>';
+		/* ?> */
+		/* <<?php $this->print_html_tag(); ?> <?php $this->print_render_attribute_string( '_wrapper' ); */
+		/* $this->print_custom_attributes(); ?>> */
+		/* <?php */
 	}
 
 	/**
@@ -218,9 +224,12 @@ abstract class Atomic_Element_Base extends Element_Base {
 	 * @return void
 	 */
 	public function after_render() {
-		?>
-		</<?php $this->print_html_tag(); ?>>
-		<?php
+		echo '</';
+		$this->print_html_tag();
+		echo '>';
+		/* ?> */
+		/* </<?php $this->print_html_tag(); ?>> */
+		/* <?php */
 	}
 
 	/**

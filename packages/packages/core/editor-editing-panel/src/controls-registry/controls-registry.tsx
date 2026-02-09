@@ -17,6 +17,7 @@ import {
 	TextControl,
 	ToggleControl,
 	UrlControl,
+	VideoControl,
 } from '@elementor/editor-controls';
 import { type ControlLayout } from '@elementor/editor-elements';
 import {
@@ -27,6 +28,7 @@ import {
 	imageSrcPropTypeUtil,
 	keyValuePropTypeUtil,
 	linkPropTypeUtil,
+	mediaSrcPropTypeUtil,
 	numberPropTypeUtil,
 	type PropTypeUtil,
 	queryPropTypeUtil,
@@ -60,6 +62,7 @@ const controlTypes = {
 	toggle: { component: ToggleControl, layout: 'full', propTypeUtil: stringPropTypeUtil },
 	'date-time': { component: DateTimeControl, layout: 'full', propTypeUtil: DateTimePropTypeUtil },
 	'inline-editing': { component: InlineEditingControl, layout: 'full', propTypeUtil: htmlPropTypeUtil },
+	video: { component: VideoControl, layout: 'custom', propTypeUtil: mediaSrcPropTypeUtil },
 } as const satisfies ControlRegistry;
 
 export type ControlType = keyof typeof controlTypes;
