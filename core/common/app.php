@@ -249,7 +249,7 @@ class App extends BaseApp {
 
 		$active_experimental_features = array_fill_keys( array_keys( $active_experimental_features ), true );
 		$all_experimental_features = array_map(
-			function ( $feature ) {
+			function( $feature ) {
 				return Plugin::$instance->experiments->is_feature_active( $feature['name'] );
 			},
 			$all_experimental_features
