@@ -1,5 +1,4 @@
 <?php
-
 namespace Elementor\Core\Common;
 
 use Elementor\Core\Base\App as BaseApp;
@@ -8,7 +7,6 @@ use Elementor\Core\Common\Modules\Finder\Module as Finder;
 use Elementor\Core\Common\Modules\Connect\Module as Connect;
 use Elementor\Core\Common\Modules\EventTracker\Module as Event_Tracker;
 use Elementor\Core\Common\Modules\EventsManager\Module as Events_Manager;
-use Elementor\Core\Common\Modules\Xss\Module as PostSanitizer;
 use Elementor\Core\Files\Uploads_Manager;
 use Elementor\Icons_Manager;
 use Elementor\Plugin;
@@ -27,7 +25,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class App extends BaseApp {
 
-
 	private $templates = [];
 
 	/**
@@ -38,7 +35,6 @@ class App extends BaseApp {
 	 */
 	public function __construct() {
 		$this->add_default_templates();
-		PostSanitizer::instance(); // NOTE: Singleton automatically watches post updates
 		add_action( 'elementor/editor/before_enqueue_scripts', [ $this, 'register_scripts' ], 9 );
 		add_action( 'admin_enqueue_scripts', [ $this, 'register_scripts' ], 9 );
 		add_action( 'wp_enqueue_scripts', [ $this, 'register_scripts' ], 9 );
