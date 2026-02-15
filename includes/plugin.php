@@ -831,8 +831,7 @@ class Plugin {
 		return esc_html__( 'Elementor', 'elementor' );
 	}
 
-	// NOTE: This utility prefents from users without the unfiltered_html permission to create/update Elementor posts via wordpress REST api with unallowed tags
-	private function sanitize_post_data( $post, WP_REST_Request $request ) {
+	public function sanitize_post_data( $post, WP_REST_Request $request ) {
 		if ( current_user_can( 'unfiltered_html' ) ) {
 			return $post;
 		}
@@ -853,9 +852,7 @@ class Plugin {
 			return is_bool( $value ) || is_null( $value ) ? $value : wp_kses_post( $value );
 		} );
 		$request_body['meta']['_elementor_data'] = json_encode( $elementor_data );
-		$request_body->meta->_elementor_data = json_encode( $elementor_data );
 		$request->set_body( json_encode( $request_body ) );
-
 		return $post;
 	}
 }
