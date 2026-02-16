@@ -126,6 +126,14 @@ export function createNestedTemplatedElementView( {
 			return this._currentRenderPromise;
 		},
 
+		renderOnChange( settings: unknown ) {
+			this.invalidateRenderCache();
+			this.isRendered = false;
+			// @ts-expect-error: Invalid type
+			AtomicElementBaseView.prototype.renderOnChange.call( this, settings );
+			this.render();
+		},
+
 		_beforeRender() {
 			createBeforeRender( this );
 		},

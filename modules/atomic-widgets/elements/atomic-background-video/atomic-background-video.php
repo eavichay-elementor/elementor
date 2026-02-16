@@ -46,7 +46,7 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 		return [
 			'classes' => Classes_Prop_Type::make()->default( [] ),
 			'source' => Video_Src_Prop_Type::make()->optional(),
-			'autoplay' => Boolean_Prop_Type::make()->default( false ),
+			'autoplay' => Boolean_Prop_Type::make()->default( true ),
 			'muted' => Boolean_Prop_Type::make()->default( true ),
 			'loop' => Boolean_Prop_Type::make()->default( false ),
 			'include_controls' => Boolean_Prop_Type::make()->default( true ),
@@ -78,6 +78,7 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 						->add_prop( 'display', String_Prop_Type::generate( 'block' ) )
 						->add_prop( 'overflow', String_Prop_Type::generate( 'hidden' ) )
 						->add_prop( 'position', String_Prop_Type::generate( 'relative' ) )
+						->add_prop( 'z-index', String_Prop_Type::generate( 'auto' ) )
 						->add_prop('padding', Dimensions_Prop_Type::generate([
 							'block-start' => Size_Prop_Type::generate([
 									'size' => 0,
@@ -123,7 +124,7 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 						->children( [
 							Atomic_Svg::generate()->build()
 						] )
-						->is_locked( true )->build(),
+						->is_locked( false )->build(),
 				] )
 				->is_locked( true )->build(),
 		];
