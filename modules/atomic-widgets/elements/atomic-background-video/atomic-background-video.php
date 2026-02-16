@@ -19,6 +19,8 @@ use Elementor\Modules\AtomicWidgets\Styles\Style_Variant;
 use Elementor\Modules\Components\PropTypes\Overridable_Prop_Type;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Bgvideo_Controls;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Svg\Atomic_Svg;
+use Elementor\Modules\AtomicWidgets\Elements\Loader\Frontend_Assets_Loader;
+use Elementor\Utils;
 
 class Atomic_Background_Video extends Atomic_Element_Base {
 	use Has_Element_Template;
@@ -102,6 +104,28 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 		];
 	}
 
+	public function get_script_depends()
+	{
+		$global_depends = parent::get_script_depends();
+		return array_merge( $global_depends, [
+			'elementor-background-video-handler',
+		] );
+	}
+
+	public function register_frontend_handlers()
+	{
+		$assets_url = ELEMENTOR_ASSETS_URL;
+		$min_suffix = ( Utils::is_script_debug() || Utils::is_elementor_tests() ) ? '' : '.min';
+
+		wp_register_script(
+			'elementor-background-video-handler',
+			"{$assets_url}js/background-video-handler{$min_suffix}.js",
+			[ Frontend_Assets_Loader::FRONTEND_HANDLERS_HANDLE ],
+			ELEMENTOR_VERSION,
+			true
+		);
+	}
+
 	protected function get_templates(): array
 	{
 		return [
@@ -117,14 +141,22 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 					'title' => esc_html__( 'Video Controls', 'elementor'  )
 				])
 				->children( [
-					Atomic_Bgvideo_Play_Button::generate()
+						Atomic_Bgvideo_Play_Button::generate()
 						->editor_settings( [
 							'title' => esc_html__( 'Play Button', 'elementor'  )
 						])
 						->children( [
 							Atomic_Svg::generate()->build()
 						] )
-						->is_locked( false )->build(),
+						->is_locked( true )->build(),
+				Atomic_Bgvideo_Pause_Button::generate()
+						->editor_settings( [
+							'title' => esc_html__( 'Play Button', 'elementor'  )
+						])
+						->children( [
+							Atomic_Svg::generate()->build()
+						] )
+						->is_locked( true )->build(),
 				] )
 				->is_locked( true )->build(),
 		];

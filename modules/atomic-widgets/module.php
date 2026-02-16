@@ -111,6 +111,7 @@ use Elementor\Modules\AtomicWidgets\Utils\Utils;
 use Elementor\Core\Base\Document;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Bgvideo_Controls;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Bgvideo_Pause_Button;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Bgvideo_Play_Button;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Self_Hosted_Video\Atomic_Self_Hosted_Video;
 use Elementor\Modules\AtomicWidgets\PropsResolver\Transformers\Video_Src_Transformer;
@@ -266,7 +267,7 @@ class Module extends BaseModule {
 		$elements_manager->register_element_type( new Atomic_Background_Video() );
 		$elements_manager->register_element_type( new Atomic_Bgvideo_Controls() );
 		$elements_manager->register_element_type( new Atomic_Bgvideo_Play_Button() );
-
+		$elements_manager->register_element_type( new Atomic_Bgvideo_Pause_Button() );
 
 		$elements_manager->register_element_type( new Atomic_Tabs() );
 		$elements_manager->register_element_type( new Atomic_Tabs_Menu() );

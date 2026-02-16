@@ -67,3 +67,18 @@ class Atomic_Bgvideo_Play_Button extends Atomic_Element_Base {
 		];
 	}
 }
+
+class Atomic_Bgvideo_Pause_Button extends Atomic_Bgvideo_Play_Button {
+	public static function get_type() {
+		return 'e-bgvideo-pause-button';
+	}
+
+	public static function get_element_type(): string
+	{
+		return 'e-bgvideo-pause-button';
+	}
+
+	public function get_icon() {
+		return 'eicon-pause';
+	}
+}
