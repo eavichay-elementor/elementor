@@ -1,0 +1,15 @@
+{% set classes = [base_styles.base] | merge(settings.classes | default([])) | join(' ') %}
+<div class="{{ classes }}" data-interaction-id="{{ id }}" data-e-type="atomic-background-video" {{ settings.attributes }}>
+{% set autoplay_attr = settings.autoplay ? 'autoplay' : '' %}
+{% set loop_attr = settings.loop ? 'loop' : '' %}
+{% set muted_attr = settings.muted ? 'muted' : '' %}
+{% if settings.source.url is not empty %}
+	<video style="min-width: 100%; min-height: 100%; position: absolute"
+		{{ autoplay_attr }}
+		{{ loop_attr }}
+		{{ muted_attr }}>
+		<source src="{{ settings.source.url | e('full_url') }}">
+	</video>
+{% endif %}
+    <!-- elementor-children-placeholder -->
+</div>
