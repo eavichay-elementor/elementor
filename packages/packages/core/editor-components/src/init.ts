@@ -4,11 +4,11 @@ import {
 	registerElementType,
 	settingsTransformersRegistry,
 } from '@elementor/editor-canvas';
+import { registerControlReplacement } from '@elementor/editor-controls';
 import { getV1CurrentDocument } from '@elementor/editor-documents';
 import {
 	FIELD_TYPE,
 	injectIntoPanelHeaderTop,
-	registerControlReplacement,
 	registerEditingPanelReplacement,
 	registerFieldIndicator,
 } from '@elementor/editor-editing-panel';
@@ -31,6 +31,7 @@ import { CreateComponentForm } from './components/create-component-form/create-c
 import { EditComponent } from './components/edit-component/edit-component';
 import { openEditModeDialog } from './components/in-edit-mode';
 import { InstanceEditingPanel } from './components/instance-editing-panel/instance-editing-panel';
+import { LoadTemplateComponents } from './components/load-template-components';
 import { OverridablePropControl } from './components/overridable-props/overridable-prop-control';
 import { OverridablePropIndicator } from './components/overridable-props/overridable-prop-indicator';
 import { COMPONENT_WIDGET_TYPE, createComponentType } from './create-component-type';
@@ -47,7 +48,6 @@ import { beforeSave } from './sync/before-save';
 import { initCleanupOverridablePropsOnDelete } from './sync/cleanup-overridable-props-on-delete';
 import { initHandleComponentEditModeContainer } from './sync/handle-component-edit-mode-container';
 import { initLoadComponentDataAfterInstanceAdded } from './sync/load-component-data-after-instance-added';
-import { initRegenerateOverrideKeys } from './sync/regenerate-override-keys';
 import { initRevertOverridablesOnCopyOrDuplicate } from './sync/revert-overridables-on-copy-or-duplicate';
 import { type ExtendedWindow } from './types';
 import { onElementDrop } from './utils/tracking';
@@ -111,6 +111,11 @@ export function init() {
 		await loadComponentsAssets( ( config?.elements as V1ElementData[] ) ?? [] );
 	} );
 
+	injectIntoLogic( {
+		id: 'templates',
+		component: LoadTemplateComponents,
+	} );
+
 	registerFieldIndicator( {
 		fieldType: FIELD_TYPE.SETTINGS,
 		id: 'component-overridable-prop',
@@ -133,8 +138,6 @@ export function init() {
 	settingsTransformersRegistry.register( 'component-instance', componentInstanceTransformer );
 	settingsTransformersRegistry.register( 'overridable', componentOverridableTransformer );
 	settingsTransformersRegistry.register( 'override', componentOverrideTransformer );
-
-	initRegenerateOverrideKeys();
 
 	initCleanupOverridablePropsOnDelete();
 

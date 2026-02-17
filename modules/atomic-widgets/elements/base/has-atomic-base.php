@@ -16,6 +16,7 @@ use Elementor\Modules\AtomicWidgets\PropTypes\Link_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
 use Elementor\Utils;
 use Elementor\Modules\Components\PropTypes\Overridable_Prop_Type;
+use Elementor\Modules\AtomicWidgets\Styles\Atomic_Widget_Styles;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -133,65 +134,6 @@ trait Has_Atomic_Base {
 		return [];
 	}
 
-	private function convert_prop_type_interactions_to_legacy( $interactions ) {
-		$legacy_items = [];
-
-		foreach ( $interactions['items'] as $item ) {
-			if ( isset( $item['$$type'] ) && 'interaction-item' === $item['$$type'] ) {
-				$legacy_item = $this->extract_legacy_interaction_from_prop_type( $item );
-				if ( $legacy_item ) {
-					$legacy_items[] = $legacy_item;
-				}
-			} else {
-				$legacy_items[] = $item;
-			}
-		}
-
-		return [
-			'version' => $interactions['version'] ?? 1,
-			'items' => $legacy_items,
-		];
-	}
-
-	private function extract_legacy_interaction_from_prop_type( $item ) {
-		if ( ! isset( $item['value'] ) || ! is_array( $item['value'] ) ) {
-			return null;
-		}
-
-		$item_value = $item['value'];
-
-		$interaction_id = $this->extract_prop_value( $item_value, 'interaction_id' );
-		$trigger = $this->extract_prop_value( $item_value, 'trigger' );
-		$animation = $this->extract_prop_value( $item_value, 'animation' );
-
-		if ( ! is_array( $animation ) ) {
-			return null;
-		}
-
-		$effect = $this->extract_prop_value( $animation, 'effect' );
-		$type = $this->extract_prop_value( $animation, 'type' );
-		$direction = $this->extract_prop_value( $animation, 'direction' );
-		$timing_config = $this->extract_prop_value( $animation, 'timing_config' );
-
-		$duration = 300;
-		$delay = 0;
-
-		if ( is_array( $timing_config ) ) {
-			$duration = $this->extract_prop_value( $timing_config, 'duration', 300 );
-			$delay = $this->extract_prop_value( $timing_config, 'delay', 0 );
-		}
-
-		$animation_id = implode( '-', [ $trigger, $effect, $type, $direction, $duration, $delay ] );
-
-		return [
-			'interaction_id' => $interaction_id,
-			'animation' => [
-				'animation_id' => $animation_id,
-				'animation_type' => 'full-preset',
-			],
-		];
-	}
-
 	private function extract_prop_value( $data, $key, $default = '' ) {
 		if ( ! is_array( $data ) || ! isset( $data[ $key ] ) ) {
 			return $default;
@@ -282,7 +224,7 @@ trait Has_Atomic_Base {
 	final public function get_raw_data( $with_html_content = false ) {
 		$raw_data = parent::get_raw_data( $with_html_content );
 
-		$raw_data['styles'] = $this->styles;
+		$raw_data['styles'] = Atomic_Widget_Styles::get_license_based_filtered_styles( $this->styles ?? [] );
 		$raw_data['interactions'] = $this->interactions ?? [];
 		$raw_data['editor_settings'] = $this->editor_settings;
 
@@ -358,75 +300,6 @@ trait Has_Atomic_Base {
 			'elementor/atomic-widgets/props-schema',
 			$schema
 		);
-	}
-
-	public function get_interactions_ids() {
-		$animation_ids = [];
-
-		$list_of_interactions = ( is_array( $this->interactions ) && isset( $this->interactions['items'] ) )
-			? $this->interactions['items']
-			: [];
-
-		foreach ( $list_of_interactions as $interaction ) {
-			if ( isset( $interaction['$$type'] ) && 'interaction-item' === $interaction['$$type'] ) {
-				$animation_id = $this->extract_animation_id_from_prop_type( $interaction );
-				if ( $animation_id ) {
-					$animation_ids[] = $animation_id;
-				}
-			} elseif ( isset( $interaction['animation']['animation_id'] ) ) {
-				$animation_ids[] = $interaction['animation']['animation_id'];
-			}
-		}
-
-		return $animation_ids;
-	}
-
-	private function extract_animation_id_from_prop_type( $item ) {
-		if ( ! isset( $item['value'] ) || ! is_array( $item['value'] ) ) {
-			return null;
-		}
-
-		$item_value = $item['value'];
-
-		$trigger = $this->extract_prop_value( $item_value, 'trigger' );
-		$animation = $this->extract_prop_value( $item_value, 'animation' );
-
-		if ( ! is_array( $animation ) ) {
-			return null;
-		}
-
-		$effect = $this->extract_prop_value( $animation, 'effect' );
-		$type = $this->extract_prop_value( $animation, 'type' );
-		$direction = $this->extract_prop_value( $animation, 'direction' );
-		$timing_config = $this->extract_prop_value( $animation, 'timing_config' );
-		$config = $this->extract_prop_value( $animation, 'config' );
-
-		$duration = 300;
-		$delay = 0;
-		$replay = 0;
-		$relative_to = 'viewport';
-		$offset_top = 15;
-		$offset_bottom = 85;
-
-		if ( is_array( $timing_config ) ) {
-			$duration = $this->extract_prop_value( $timing_config, 'duration', 300 );
-			$delay = $this->extract_prop_value( $timing_config, 'delay', 0 );
-		}
-
-		if ( is_array( $config ) ) {
-			$relative_to = $this->extract_prop_value( $config, 'relative_to', 'viewport' );
-			$offset_top = $this->extract_prop_value( $config, 'offset_top', 15 );
-			$offset_bottom = $this->extract_prop_value( $config, 'offset_bottom', 85 );
-
-			$replay = $this->extract_prop_value( $config, 'replay', 0 );
-			if ( empty( $replay ) && 0 !== $replay && '0' !== $replay ) {
-				$replay = 0;
-			}
-		} else {
-			$replay = 0;
-		}
-
-		return implode( '-', [ $trigger, $effect, $type, $direction, $duration, $delay, $replay, $relative_to, $offset_top, $offset_bottom ] );
 	}
 
 	public function print_content() {

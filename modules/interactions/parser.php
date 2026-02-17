@@ -3,6 +3,7 @@
 namespace Elementor\Modules\Interactions;
 
 use Elementor\Modules\AtomicWidgets\Utils\Utils;
+use Elementor\Modules\Interactions\Adapter;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.

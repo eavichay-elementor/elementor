@@ -1,34 +1,59 @@
 import * as React from 'react';
-import { MenuListItem } from '@elementor/editor-ui';
-import { Select, type SelectChangeEvent } from '@elementor/ui';
-import { __ } from '@wordpress/i18n';
+import { useCallback, useRef } from 'react';
+import { type Unit, UnstableSizeField } from '@elementor/editor-controls';
+import { type SizePropValue } from '@elementor/editor-props';
 
-import { type FieldProps } from '../../types';
+import { DEFAULT_TIME_UNIT, TIME_UNITS } from '../../configs/time-constants';
+import { type FieldProps, type SizeStringValue } from '../../types';
+import { formatSizeValue, parseSizeValue } from '../../utils/size-transform-utils';
+import { convertTimeUnit } from '../../utils/time-conversion';
 
-export function TimeFrameIndicator( { value, onChange }: FieldProps ) {
-	const availableTimeFrames = [ '0', '100', '200', '300', '400', '500', '750', '1000', '1250', '1500' ].map(
-		( key ) => ( {
-			key,
-			// translators: %s: time in milliseconds
-			label: __( '%s MS', 'elementor' ).replace( '%s', key ),
-		} )
+export function TimeFrameIndicator( {
+	value,
+	onChange,
+	defaultValue,
+}: FieldProps & { defaultValue: SizeStringValue } ) {
+	const sizeValue = parseSizeValue( value as SizeStringValue, TIME_UNITS, defaultValue, DEFAULT_TIME_UNIT );
+	const prevUnitRef = useRef< Unit >( sizeValue.unit as Unit );
+
+	const setValue = useCallback(
+		( size: SizePropValue[ 'value' ] ) => {
+			const unitChanged = prevUnitRef.current !== size.unit;
+
+			if ( unitChanged ) {
+				const fromUnit = prevUnitRef.current;
+				const toUnit = size.unit as Unit;
+
+				size.size = convertTimeUnit( Number( size.size ), fromUnit, toUnit );
+				prevUnitRef.current = toUnit;
+			}
+
+			onChange( formatSizeValue( size ) as string );
+		},
+		[ onChange ]
 	);
 
+	const handleChange = ( newValue: SizePropValue[ 'value' ] ) => {
+		setValue( newValue );
+	};
+
+	const handleBlur = () => {
+		if ( ! sizeValue.size ) {
+			setValue( parseSizeValue( defaultValue, TIME_UNITS, undefined, DEFAULT_TIME_UNIT ) );
+		}
+	};
+
 	return (
-		<Select
-			fullWidth
-			displayEmpty
-			size="tiny"
-			value={ value }
-			onChange={ ( event: SelectChangeEvent< string > ) => onChange( event.target.value ) }
-		>
-			{ availableTimeFrames.map( ( timeFrame ) => {
-				return (
-					<MenuListItem key={ timeFrame.key } value={ timeFrame.key }>
-						{ timeFrame.label }
-					</MenuListItem>
-				);
-			} ) }
-		</Select>
+		<UnstableSizeField
+			units={ TIME_UNITS }
+			value={ sizeValue }
+			onChange={ handleChange }
+			onBlur={ handleBlur }
+			InputProps={ {
+				inputProps: {
+					min: 0,
+				},
+			} }
+		/>
 	);
 }

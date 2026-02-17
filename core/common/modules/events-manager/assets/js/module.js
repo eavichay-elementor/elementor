@@ -4,7 +4,6 @@ import { TIERS } from 'elementor-utils/tiers';
 
 export default class extends elementorModules.Module {
 	trackingEnabled = false;
-	#sessionRecordingInProgress = false;
 
 	onInit() {
 		this.config = eventsConfig;
@@ -13,23 +12,22 @@ export default class extends elementorModules.Module {
 			return;
 		}
 
+		this.initializeMixpanel();
+		this.enableTracking();
+	}
+
+	initializeMixpanel() {
 		mixpanel.init(
 			elementorCommon.config.editor_events?.token,
 			{
 				persistence: 'localStorage',
 				autocapture: false,
-				record_sessions_percent: 0,
-				record_idle_timeout_ms: 60000,
-				record_max_ms: 300000,
-				record_mask_text_selector: '',
 				flags: true,
 				api_hosts: {
 					flags: 'https://api-eu.mixpanel.com',
 				},
 			},
 		);
-
-		this.enableTracking();
 	}
 
 	enableTracking() {
@@ -75,40 +73,6 @@ export default class extends elementorModules.Module {
 		};
 
 		mixpanel.track( name, eventData, options );
-	}
-
-	startSessionRecording() {
-		if ( ! this.canSendEvents() || this.isSessionRecordingInProgress() ) {
-			return;
-		}
-
-		if ( ! this.trackingEnabled ) {
-			this.enableTracking();
-		}
-
-		mixpanel.start_session_recording();
-		this.setSessionRecordingInProgress( true );
-	}
-
-	stopSessionRecording() {
-		if ( ! this.canSendEvents() || ! this.isSessionRecordingInProgress() ) {
-			return;
-		}
-
-		mixpanel.stop_session_recording();
-		this.setSessionRecordingInProgress( false );
-	}
-
-	setSessionRecordingInProgress( value ) {
-		if ( 'boolean' !== typeof value ) {
-			return;
-		}
-
-		this.#sessionRecordingInProgress = value;
-	}
-
-	isSessionRecordingInProgress() {
-		return this.#sessionRecordingInProgress;
 	}
 
 	async featureFlagIsActive( flagName ) {

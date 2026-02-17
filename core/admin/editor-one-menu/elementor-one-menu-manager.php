@@ -51,7 +51,7 @@ class Elementor_One_Menu_Manager {
 		add_action( 'admin_head', [ $this, 'hide_legacy_templates_menu' ] );
 		add_action( 'admin_head', [ $this, 'hide_old_elementor_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_menu_assets' ] );
-		add_action( 'admin_print_scripts-elementor_page_elementor-editor', [ $this, 'enqueue_home_screen_on_editor_page' ] );
+		add_action( 'admin_print_scripts-toplevel_page_elementor', [ $this, 'enqueue_home_screen_on_editor_page' ] );
 	}
 
 	public function check_if_pro_module_is_enabled(): void {
@@ -76,6 +76,9 @@ class Elementor_One_Menu_Manager {
 		do_action( 'elementor/editor-one/menu/register_submenus' );
 	}
 
+	/**
+	 * TODO: This can be removed in v4.1.0 [ED-22806]
+	 */
 	public function register_pro_submenus(): void {
 		if ( ! $this->is_pro_module_enabled &&
 			Utils::has_pro() &&
@@ -188,7 +191,8 @@ class Elementor_One_Menu_Manager {
 	public function hide_legacy_templates_menu(): void {
 		?>
 		<style type="text/css">
-			#menu-posts-elementor_library {
+			#menu-posts-elementor_library, 
+			#menu-posts-elementor_library + .wp-not-current-submenu.wp-menu-separator {
 				display: none !important;
 			}
 		</style>
@@ -198,7 +202,9 @@ class Elementor_One_Menu_Manager {
 	public function hide_old_elementor_menu(): void {
 		?>
 		<style type="text/css">
-			#toplevel_page_elementor {
+			#toplevel_page_elementor,
+			#toplevel_page_elementor + .wp-not-current-submenu.wp-menu-separator,
+			#toplevel_page_elementor-home + .wp-not-current-submenu.wp-menu-separator {
 				display: none !important;
 			}
 		</style>
@@ -313,7 +319,9 @@ class Elementor_One_Menu_Manager {
 		);
 
 		$config = [
-			'editorFlyout' => $this->get_editor_flyout_data(),
+			'editorFlyout' => $this->menu_data_provider->get_third_level_data(
+				Menu_Data_Provider::THIRD_LEVEL_FLYOUT_MENU
+			),
 		];
 
 		wp_enqueue_script(
@@ -329,10 +337,6 @@ class Elementor_One_Menu_Manager {
 			'editorOneMenuConfig',
 			$config
 		);
-	}
-
-	private function get_editor_flyout_data(): array {
-		return $this->menu_data_provider->get_editor_flyout_data();
 	}
 }
 

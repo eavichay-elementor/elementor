@@ -1,22 +1,24 @@
 import * as React from 'react';
-import { type PropsWithChildren, useMemo } from 'react';
-import { ControlFormLabel, PopoverContent, PopoverGridContainer } from '@elementor/editor-controls';
-import { Divider, Grid } from '@elementor/ui';
+import { useMemo, useRef } from 'react';
+import { PopoverContent } from '@elementor/editor-controls';
+import { Box, Divider, Grid } from '@elementor/ui';
 import { __ } from '@wordpress/i18n';
 
 import { getInteractionsControl } from '../interactions-controls-registry';
-import type { InteractionItemValue } from '../types';
+import { type InteractionItemValue, type SizeStringValue } from '../types';
 import {
 	createAnimationPreset,
 	createString,
 	extractBoolean,
-	extractNumber,
+	extractSize,
 	extractString,
 } from '../utils/prop-value-utils';
+import { resolveDirection } from '../utils/resolve-direction';
+import { parseSizeValue } from '../utils/size-transform-utils';
 import { Direction } from './controls/direction';
-import { Effect } from './controls/effect';
 import { EffectType } from './controls/effect-type';
 import { TimeFrameIndicator } from './controls/time-frame-indicator';
+import { Field } from './field';
 
 type InteractionDetailsProps = {
 	interaction: InteractionItemValue;
@@ -29,76 +31,121 @@ const DEFAULT_VALUES = {
 	effect: 'fade',
 	type: 'in',
 	direction: '',
-	duration: 300,
+	duration: 600,
 	delay: 0,
 	replay: false,
+	easing: 'easeIn',
 	relativeTo: 'viewport',
 	offsetTop: 15,
 	offsetBottom: 85,
 };
 
-const TRIGGERS_WITH_REPLAY = [ 'scrollIn', 'scrollOut' ];
+const TRIGGERS_WITHOUT_REPLAY = [ 'load', 'scrollOn', 'hover', 'click' ];
+
+type InteractionsControlType =
+	| 'trigger'
+	| 'effect'
+	| 'effectType'
+	| 'direction'
+	| 'duration'
+	| 'delay'
+	| 'replay'
+	| 'easing'
+	| 'relativeTo'
+	| 'offsetTop'
+	| 'offsetBottom';
+
+type InteractionValues = {
+	trigger: string;
+	effect: string;
+	type: string;
+	direction: string;
+	duration: SizeStringValue;
+	delay: SizeStringValue;
+	replay: boolean;
+	easing: string;
+	relativeTo: string;
+	offsetTop: SizeStringValue;
+	offsetBottom: SizeStringValue;
+};
+
+type ControlVisibilityConfig = {
+	[ key: string ]: ( values: InteractionValues ) => boolean;
+};
+
+const controlVisibilityConfig: ControlVisibilityConfig = {
+	replay: ( values ) => ! TRIGGERS_WITHOUT_REPLAY.includes( values.trigger ),
+
+	relativeTo: ( values ) => values.trigger === 'scrollOn',
+	offsetTop: ( values ) => values.trigger === 'scrollOn',
+	offsetBottom: ( values ) => values.trigger === 'scrollOn',
+
+	duration: ( values ) => {
+		const isRelativeToVisible = values.trigger === 'scrollOn';
+		return ! isRelativeToVisible;
+	},
+	delay: ( values ) => {
+		const isRelativeToVisible = values.trigger === 'scrollOn';
+		return ! isRelativeToVisible;
+	},
+};
+
+function useControlComponent( controlName: InteractionsControlType, isVisible: boolean = true ) {
+	return useMemo( () => {
+		if ( ! isVisible ) {
+			return null;
+		}
+		return getInteractionsControl( controlName )?.component ?? null;
+	}, [ controlName, isVisible ] );
+}
 
 export const InteractionDetails = ( { interaction, onChange, onPlayInteraction }: InteractionDetailsProps ) => {
 	const trigger = extractString( interaction.trigger, DEFAULT_VALUES.trigger );
 	const effect = extractString( interaction.animation.value.effect, DEFAULT_VALUES.effect );
 	const type = extractString( interaction.animation.value.type, DEFAULT_VALUES.type );
 	const direction = extractString( interaction.animation.value.direction, DEFAULT_VALUES.direction );
-	const duration = extractNumber( interaction.animation.value.timing_config.value.duration, DEFAULT_VALUES.duration );
-	const delay = extractNumber( interaction.animation.value.timing_config.value.delay, DEFAULT_VALUES.delay );
+	const duration = extractSize( interaction.animation.value.timing_config.value.duration );
+	const delay = extractSize( interaction.animation.value.timing_config.value.delay );
 	const replay = extractBoolean( interaction.animation.value.config?.value.replay, DEFAULT_VALUES.replay );
+	const easing = extractString( interaction.animation.value.config?.value.easing, DEFAULT_VALUES.easing );
 	const relativeTo = extractString( interaction.animation.value.config?.value.relativeTo, DEFAULT_VALUES.relativeTo );
-	const offsetTop = extractNumber( interaction.animation.value.config?.value.offsetTop, DEFAULT_VALUES.offsetTop );
-	const offsetBottom = extractNumber(
+
+	const offsetTop = extractSize( interaction.animation.value.config?.value.offsetTop, DEFAULT_VALUES.offsetTop );
+	const offsetBottom = extractSize(
 		interaction.animation.value.config?.value.offsetBottom,
 		DEFAULT_VALUES.offsetBottom
 	);
 
-	const shouldShowReplay = TRIGGERS_WITH_REPLAY.includes( trigger );
-	const shouldShowRelativeTo = trigger === 'scrollOn';
-
-	const TriggerControl = useMemo( () => {
-		return getInteractionsControl( 'trigger' )?.component ?? null;
-	}, [] );
-
-	const ReplayControl = useMemo( () => {
-		if ( ! shouldShowReplay ) {
-			return null;
-		}
-		return getInteractionsControl( 'replay' )?.component ?? null;
-	}, [ shouldShowReplay ] );
-
-	const RelativeToControl = useMemo( () => {
-		if ( ! shouldShowRelativeTo ) {
-			return null;
-		}
-		return getInteractionsControl( 'relativeTo' )?.component ?? null;
-	}, [ shouldShowRelativeTo ] );
-
-	const OffsetTopControl = useMemo( () => {
-		if ( ! shouldShowRelativeTo ) {
-			return null;
-		}
-		return getInteractionsControl( 'offsetTop' )?.component ?? null;
-	}, [ shouldShowRelativeTo ] );
-
-	const OffsetBottomControl = useMemo( () => {
-		if ( ! shouldShowRelativeTo ) {
-			return null;
-		}
-		return getInteractionsControl( 'offsetBottom' )?.component ?? null;
-	}, [ shouldShowRelativeTo ] );
-
-	const resolveDirection = ( hasDirection: boolean, newEffect?: string, newDirection?: string ) => {
-		if ( newEffect === 'slide' && ! newDirection ) {
-			return 'top';
-		}
-		// Why? - New direction can be undefined when the effect is not slide, so if the updates object includes direction, we take it always!
-		if ( hasDirection ) {
-			return newDirection;
-		}
-		return direction;
+	const interactionValues = {
+		trigger,
+		effect,
+		type,
+		direction,
+		duration,
+		delay,
+		easing,
+		replay,
+		relativeTo,
+		offsetTop,
+		offsetBottom,
 	};
+
+	const TriggerControl = useControlComponent( 'trigger', true );
+	const EffectControl = useControlComponent( 'effect' );
+	const ReplayControl = useControlComponent( 'replay', controlVisibilityConfig.replay( interactionValues ) );
+	const RelativeToControl = useControlComponent(
+		'relativeTo',
+		controlVisibilityConfig.relativeTo( interactionValues )
+	);
+	const OffsetTopControl = useControlComponent( 'offsetTop', controlVisibilityConfig.offsetTop( interactionValues ) );
+	const OffsetBottomControl = useControlComponent(
+		'offsetBottom',
+		controlVisibilityConfig.offsetBottom( interactionValues )
+	);
+
+	const EasingControl = useControlComponent( 'easing' );
+
+	const containerRef = useRef< HTMLDivElement >( null );
 
 	const updateInteraction = (
 		updates: Partial< {
@@ -106,16 +153,22 @@ export const InteractionDetails = ( { interaction, onChange, onPlayInteraction }
 			effect: string;
 			type: string;
 			direction: string;
-			duration: number;
-			delay: number;
+			duration: SizeStringValue;
+			delay: SizeStringValue;
 			replay: boolean;
+			easing?: string;
 			relativeTo: string;
-			offsetTop: number;
-			offsetBottom: number;
+			offsetTop: SizeStringValue;
+			offsetBottom: SizeStringValue;
 		} >
 	): void => {
-		const resolvedDirectionValue = resolveDirection( 'direction' in updates, updates.effect, updates.direction );
-		const newReplay = updates.replay !== undefined ? updates.replay : replay;
+		const resolvedDirectionValue = resolveDirection(
+			'direction' in updates,
+			updates.effect,
+			updates.direction,
+			direction,
+			effect
+		);
 
 		const updatedInteraction = {
 			...interaction,
@@ -127,7 +180,8 @@ export const InteractionDetails = ( { interaction, onChange, onPlayInteraction }
 				direction: resolvedDirectionValue,
 				duration: updates.duration ?? duration,
 				delay: updates.delay ?? delay,
-				replay: newReplay,
+				replay: updates.replay ?? replay,
+				easing: updates.easing ?? easing,
 				relativeTo: updates.relativeTo ?? relativeTo,
 				offsetTop: updates.offsetTop ?? offsetTop,
 				offsetBottom: updates.offsetBottom ?? offsetBottom,
@@ -144,109 +198,120 @@ export const InteractionDetails = ( { interaction, onChange, onPlayInteraction }
 	};
 
 	return (
-		<PopoverContent p={ 1.5 }>
-			<Grid container spacing={ 1.5 }>
-				{ TriggerControl && (
-					<Field label={ __( 'Trigger', 'elementor' ) }>
-						<TriggerControl value={ trigger } onChange={ ( v ) => updateInteraction( { trigger: v } ) } />
-					</Field>
-				) }
-
-				{ ReplayControl && (
-					<Field label={ __( 'Replay', 'elementor' ) }>
-						<ReplayControl
-							value={ replay }
-							onChange={ ( v ) => updateInteraction( { replay: v } ) }
-							disabled={ true }
-						/>
-					</Field>
-				) }
-			</Grid>
-
-			<Divider />
-
-			<Grid container spacing={ 1.5 }>
-				<Field label={ __( 'Effect', 'elementor' ) }>
-					<Effect value={ effect } onChange={ ( v ) => updateInteraction( { effect: v } ) } />
-				</Field>
-
-				<Field label={ __( 'Type', 'elementor' ) }>
-					<EffectType value={ type } onChange={ ( v ) => updateInteraction( { type: v } ) } />
-				</Field>
-
-				<Field label={ __( 'Direction', 'elementor' ) }>
-					<Direction
-						value={ direction }
-						onChange={ ( v ) => updateInteraction( { direction: v } ) }
-						interactionType={ type }
-					/>
-				</Field>
-
-				<Field label={ __( 'Duration', 'elementor' ) }>
-					<TimeFrameIndicator
-						value={ String( duration ) }
-						onChange={ ( v ) => updateInteraction( { duration: parseInt( v, 10 ) } ) }
-					/>
-				</Field>
-
-				<Field label={ __( 'Delay', 'elementor' ) }>
-					<TimeFrameIndicator
-						value={ String( delay ) }
-						onChange={ ( v ) => updateInteraction( { delay: parseInt( v, 10 ) } ) }
-					/>
-				</Field>
-			</Grid>
-			{ shouldShowRelativeTo && RelativeToControl && (
-				<>
-					<Divider />
-					<Grid container spacing={ 1.5 }>
-						<Field label={ __( 'Relative To', 'elementor' ) }>
-							<RelativeToControl
-								value={ relativeTo }
-								onChange={ ( v ) => updateInteraction( { relativeTo: v } ) }
+		<Box ref={ containerRef }>
+			<PopoverContent p={ 1.5 }>
+				<Grid container spacing={ 1.5 }>
+					{ TriggerControl && (
+						<Field label={ __( 'Trigger', 'elementor' ) }>
+							<TriggerControl
+								value={ trigger }
+								onChange={ ( v ) => updateInteraction( { trigger: v } ) }
 							/>
 						</Field>
-						{ OffsetTopControl && (
-							<Field label={ __( 'Offset Top', 'elementor' ) }>
-								<OffsetTopControl
-									value={ String( offsetTop ) }
-									onChange={ ( v: string ) => updateInteraction( { offsetTop: parseInt( v, 10 ) } ) }
+					) }
+
+					{ ReplayControl && (
+						<Field label={ __( 'Replay', 'elementor' ) }>
+							<ReplayControl
+								value={ replay }
+								onChange={ ( v ) => updateInteraction( { replay: v } ) }
+								disabled={ true }
+								anchorRef={ containerRef }
+							/>
+						</Field>
+					) }
+				</Grid>
+
+				<Divider />
+
+				<Grid container spacing={ 1.5 }>
+					{ EffectControl && (
+						<Field label={ __( 'Effect', 'elementor' ) }>
+							<EffectControl value={ effect } onChange={ ( v ) => updateInteraction( { effect: v } ) } />
+						</Field>
+					) }
+
+					<Field label={ __( 'Type', 'elementor' ) }>
+						<EffectType value={ type } onChange={ ( v ) => updateInteraction( { type: v } ) } />
+					</Field>
+
+					<Field label={ __( 'Direction', 'elementor' ) }>
+						<Direction
+							value={ direction }
+							onChange={ ( v ) => updateInteraction( { direction: v } ) }
+							interactionType={ type }
+						/>
+					</Field>
+
+					{ controlVisibilityConfig.duration( interactionValues ) && (
+						<Field label={ __( 'Duration', 'elementor' ) }>
+							<TimeFrameIndicator
+								value={ String( duration ) }
+								onChange={ ( v ) => updateInteraction( { duration: v as SizeStringValue } ) }
+								defaultValue={ DEFAULT_VALUES.duration as SizeStringValue }
+							/>
+						</Field>
+					) }
+
+					{ controlVisibilityConfig.delay( interactionValues ) && (
+						<Field label={ __( 'Delay', 'elementor' ) }>
+							<TimeFrameIndicator
+								value={ String( delay ) }
+								onChange={ ( v ) => updateInteraction( { delay: v as SizeStringValue } ) }
+								defaultValue={ DEFAULT_VALUES.delay as SizeStringValue }
+							/>
+						</Field>
+					) }
+				</Grid>
+
+				{ controlVisibilityConfig.relativeTo( interactionValues ) && RelativeToControl && (
+					<>
+						<Divider />
+						<Grid container spacing={ 1.5 }>
+							<Field label={ __( 'Relative To', 'elementor' ) }>
+								<RelativeToControl
+									value={ relativeTo }
+									onChange={ ( v ) => updateInteraction( { relativeTo: v } ) }
 								/>
 							</Field>
-						) }
-						{ OffsetBottomControl && (
-							<Field label={ __( 'Offset Bottom', 'elementor' ) }>
-								<OffsetBottomControl
-									value={ String( offsetBottom ) }
-									onChange={ ( v: string ) =>
-										updateInteraction( { offsetBottom: parseInt( v, 10 ) } )
-									}
-								/>
-							</Field>
-						) }
+							{ OffsetTopControl && (
+								<Field label={ __( 'Offset Top', 'elementor' ) }>
+									<OffsetTopControl
+										value={ String( parseSizeValue( offsetTop, [ '%' ] ).size ) }
+										onChange={ ( v: string ) =>
+											updateInteraction( { offsetTop: v as SizeStringValue } )
+										}
+									/>
+								</Field>
+							) }
+							{ OffsetBottomControl && (
+								<Field label={ __( 'Offset Bottom', 'elementor' ) }>
+									<OffsetBottomControl
+										value={ String( parseSizeValue( offsetBottom, [ '%' ] ).size ) }
+										onChange={ ( v: string ) =>
+											updateInteraction( { offsetBottom: v as SizeStringValue } )
+										}
+									/>
+								</Field>
+							) }
+						</Grid>
+						<Divider />
+					</>
+				) }
+
+				{ EasingControl && (
+					<Grid container spacing={ 1.5 }>
+						<Field label={ __( 'Easing', 'elementor' ) }>
+							<EasingControl
+								value={ easing }
+								onChange={ ( v ) => {
+									updateInteraction( { easing: v } );
+								} }
+							/>
+						</Field>
 					</Grid>
-					<Divider />
-				</>
-			) }
-		</PopoverContent>
+				) }
+			</PopoverContent>
+		</Box>
 	);
 };
-
-type FieldProps = {
-	label: string;
-} & PropsWithChildren;
-
-function Field( { label, children }: FieldProps ) {
-	return (
-		<Grid item xs={ 12 }>
-			<PopoverGridContainer>
-				<Grid item xs={ 6 }>
-					<ControlFormLabel>{ label }</ControlFormLabel>
-				</Grid>
-				<Grid item xs={ 6 }>
-					{ children }
-				</Grid>
-			</PopoverGridContainer>
-		</Grid>
-	);
-}
