@@ -1,0 +1,182 @@
+name: LLM Quality Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      elementor_version:
+        description: 'Elementor version'
+        required: false
+        default: 'latest'
+      elementor_pro_version:
+        description: 'Elementor Pro version'
+        required: false
+        default: 'latest'
+      angie_version:
+        description: 'Angie version'
+        required: false
+        default: 'latest'
+  schedule:
+    - cron: '0 3 * * *'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/llm-quality-env
+  ELEMENTOR_VERSION: ${{ inputs.elementor_version || 'latest' }}
+  ELEMENTOR_PRO_VERSION: ${{ inputs.elementor_pro_version || 'latest' }}
+  ANGIE_VERSION: ${{ inputs.angie_version || 'latest' }}
+
+jobs:
+  build-environment:
+    name: Build Test Environment
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ github.run_id }}
+            type=raw,value=el-${{ env.ELEMENTOR_VERSION }}-pro-${{ env.ELEMENTOR_PRO_VERSION }}-angie-${{ env.ANGIE_VERSION }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./tests/llm-quality/docker
+          file: ./tests/llm-quality/docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            ELEMENTOR_VERSION=${{ env.ELEMENTOR_VERSION }}
+            ELEMENTOR_PRO_VERSION=${{ env.ELEMENTOR_PRO_VERSION }}
+            ANGIE_VERSION=${{ env.ANGIE_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  run-scenarios:
+    name: Run Scenarios (${{ matrix.category }})
+    needs: build-environment
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        category: [simple, medium, complex, edge-cases]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Start test environment
+        run: |
+          docker compose -f tests/llm-quality/docker/docker-compose.yml up -d --wait
+          timeout 120 bash -c 'until curl -s http://localhost:8888 > /dev/null; do sleep 2; done'
+          echo "WordPress is ready"
+        env:
+          WORDPRESS_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run ${{ matrix.category }} scenarios
+        run: |
+          echo "Phase 2 - Running ${{ matrix.category }} scenarios"
+          # npx playwright test --project=${{ matrix.category }}
+        env:
+          LLM_TEST_BASE_URL: http://localhost:8888
+
+      - name: Upload scenario artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scenario-artifacts-${{ matrix.category }}
+          path: tests/llm-quality/artifacts/
+          if-no-files-found: ignore
+
+      - name: Stop test environment
+        if: always()
+        run: docker compose -f tests/llm-quality/docker/docker-compose.yml down -v
+
+  evaluate:
+    name: Promptfoo Evaluation
+    needs: run-scenarios
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all scenario artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: scenario-artifacts-*
+          path: tests/llm-quality/artifacts/
+          merge-multiple: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install promptfoo
+        run: npm install -g promptfoo
+
+      - name: Run evaluation
+        run: |
+          echo "Phase 4 - Promptfoo evaluation"
+          # promptfoo eval -c tests/llm-quality/promptfoo/promptfoo.yaml
+
+      - name: Upload evaluation results
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-results
+          path: tests/llm-quality/artifacts/
+          if-no-files-found: ignore
+
+  cleanup:
+    name: Cleanup
+    needs: [build-environment, run-scenarios, evaluate]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      packages: write
+    steps:
+      - name: Delete temporary image
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: llm-quality-env
+          package-type: container
+          min-versions-to-keep: 0
+          delete-only-untagged-versions: false
+        continue-on-error: true

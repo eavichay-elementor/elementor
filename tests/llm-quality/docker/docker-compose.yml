@@ -1,0 +1,51 @@
+services:
+  db:
+    networks:
+      - shared-network
+    image: mariadb:10.6
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  wordpress:
+    networks:
+      - shared-network
+    image: ${WORDPRESS_IMAGE:-llm-quality-env:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ELEMENTOR_VERSION: ${ELEMENTOR_VERSION:-latest}
+        ELEMENTOR_PRO_VERSION: ${ELEMENTOR_PRO_VERSION:-latest}
+        ANGIE_VERSION: ${ANGIE_VERSION:-latest}
+    ports:
+      - "8888:80"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: root
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_URL: http://localhost:8888
+      WORDPRESS_ADMIN_USER: admin
+      WORDPRESS_ADMIN_PASSWORD: admin
+      ELEMENTOR_PRO_PLUGIN_URL: ${ELEMENTOR_PRO_PLUGIN_URL:-}
+      ELEMENTOR_LICENSE_KEY: ${ELEMENTOR_LICENSE_KEY:-}
+      ANGIE_PLUGIN_URL: ${ANGIE_PLUGIN_URL:-https://downloads.wordpress.org/plugin/angie.latest-stable.zip}
+    depends_on:
+      db:
+        condition: service_healthy
+
+networks:
+  shared-network:
+    driver: bridge
