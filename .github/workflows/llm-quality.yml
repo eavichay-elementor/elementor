@@ -3,27 +3,27 @@ name: LLM Quality Tests
 on:
   workflow_dispatch:
     inputs:
-      elementor_version:
-        description: 'Elementor version'
+      elementor_plugin_url:
+        description: 'Elementor plugin URL'
         required: false
-        default: 'latest'
-      elementor_pro_version:
-        description: 'Elementor Pro version'
+        default: 'https://downloads.wordpress.org/plugin/elementor.zip'
+      elementor_pro_plugin_url:
+        description: 'Elementor Pro plugin URL'
         required: false
-        default: 'latest'
-      angie_version:
-        description: 'Angie version'
+        default: ''
+      angie_plugin_url:
+        description: 'Angie plugin URL'
         required: false
-        default: 'latest'
+        default: 'https://downloads.wordpress.org/plugin/angie.latest-stable.zip'
   schedule:
     - cron: '0 3 * * *'
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/llm-quality-env
-  ELEMENTOR_VERSION: ${{ inputs.elementor_version || 'latest' }}
-  ELEMENTOR_PRO_VERSION: ${{ inputs.elementor_pro_version || 'latest' }}
-  ANGIE_VERSION: ${{ inputs.angie_version || 'latest' }}
+  ELEMENTOR_PLUGIN_URL: ${{ inputs.elementor_plugin_url || 'https://downloads.wordpress.org/plugin/elementor.zip' }}
+  ELEMENTOR_PRO_PLUGIN_URL: ${{ inputs.elementor_pro_plugin_url || '' }}
+  ANGIE_PLUGIN_URL: ${{ inputs.angie_plugin_url || 'https://downloads.wordpress.org/plugin/angie.latest-stable.zip' }}
 
 jobs:
   build-environment:
@@ -55,7 +55,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=${{ github.run_id }}
-            type=raw,value=el-${{ env.ELEMENTOR_VERSION }}-pro-${{ env.ELEMENTOR_PRO_VERSION }}-angie-${{ env.ANGIE_VERSION }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -65,9 +64,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
-            ELEMENTOR_VERSION=${{ env.ELEMENTOR_VERSION }}
-            ELEMENTOR_PRO_VERSION=${{ env.ELEMENTOR_PRO_VERSION }}
-            ANGIE_VERSION=${{ env.ANGIE_VERSION }}
+            ELEMENTOR_PLUGIN_URL=${{ env.ELEMENTOR_PLUGIN_URL }}
+            ELEMENTOR_PRO_PLUGIN_URL=${{ env.ELEMENTOR_PRO_PLUGIN_URL }}
+            ANGIE_PLUGIN_URL=${{ env.ANGIE_PLUGIN_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

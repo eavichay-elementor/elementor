@@ -3,9 +3,9 @@ set -e
 
 echo "=========================================="
 echo "LLM Quality Test Environment"
-echo "Elementor Version: ${ELEMENTOR_VERSION}"
-echo "Elementor Pro Version: ${ELEMENTOR_PRO_VERSION}"
-echo "Angie Version: ${ANGIE_VERSION}"
+echo "Elementor Plugin URL: ${ELEMENTOR_PLUGIN_URL}"
+echo "Elementor Pro Plugin URL: ${ELEMENTOR_PRO_PLUGIN_URL}"
+echo "Angie Plugin URL: ${ANGIE_PLUGIN_URL}"
 echo "=========================================="
 
 wait_for_db() {
@@ -25,39 +25,30 @@ install_wordpress() {
 	group="${group#$pound}"
 
 	if [ ! -e index.php ] && [ ! -e wp-includes/version.php ]; then
-		echo &>2 "WordPress not found in $PWD - copying now..."
-				# if the directory exists and WordPress doesn't appear to be installed AND the permissions of it are root:root, let's chown it (likely a Docker-created directory)
 		if [ "$uid" = '0' ] && [ "$(stat -c '%u:%g' .)" = '0:0' ]; then
 			echo "Changing ownership of $PWD to $user:$group"
 			chown "$user:$group" .
 		fi
-		if ! wp core is-installed --path="/usr/src/wordpress" --allow-root; then
-			echo "Copying wp-config for docker to wp-config.php"
-			cp /usr/src/wordpress/wp-config-docker.php wp-config.php
-			cp /usr/src/wordpress/wp-config-docker.php /usr/src/wordpress/wp-config.php
-			wp core install \
-				--path="/usr/src/wordpress" \
-				--url="http://localhost:8888" \
-				--title="LLM Test Site" \
-				--admin_user="admin" \
-				--admin_password="password" \
-				--admin_email="admin@example.com" \
-				--allow-root
-			# wp core update --version=6.6 --allow-root
-		fi
+	cd /usr/src/wordpress
+		cp /usr/src/wordpress/wp-config-docker.php /usr/src/wordpress/wp-config.php
+		cp /usr/src/wordpress/wp-config-docker.php /var/www/html/wp-config.php
+		wp core install \
+			--path="/usr/src/wordpress" \
+			--url="http://localhost:8888" \
+			--title="LLM Test Site" \
+			--admin_user="admin" \
+			--admin_password="password" \
+			--admin_email="admin@example.com" \
+			--allow-root
+		# wp core update --version=6.6 --allow-root
+		cd /var/www/html
 	fi
 }
 
 install_plugins() {
 	echo "Installing plugins..."
-	echo "Installing Angie version: ${ANGIE_VERSION}"
 	install_angie
-	echo "Installing Elementor version: ${ELEMENTOR_VERSION}"
-    if [ "${ELEMENTOR_VERSION}" = "latest" ]; then
-        wp plugin install elementor --activate --allow-root || true
-    else
-        wp plugin install "https://downloads.wordpress.org/plugin/elementor.${ELEMENTOR_VERSION}.zip" --activate --allow-root || true
-    fi
+	install_elementor
     echo "Configuring elementor plugin"
     configure_elementor
 	echo "Installing elementor-hello theme"
@@ -68,8 +59,17 @@ install_plugins() {
     connect_elementor_license
 }
 
+install_elementor() {
+    echo "Installing Elementor..."
+    if [ -n "${ELEMENTOR_PLUGIN_URL}" ]; then
+        wp plugin install "${ELEMENTOR_PLUGIN_URL}" --activate --allow-root || true
+    else
+        echo "ELEMENTOR_PLUGIN_URL not set, skipping Elementor installation"
+    fi
+}
+
 install_elementor_pro() {
-    echo "Installing Elementor Pro (version: ${ELEMENTOR_PRO_VERSION})..."
+    echo "Installing Elementor Pro..."
     if [ -n "${ELEMENTOR_PRO_PLUGIN_URL}" ]; then
         wp plugin install "${ELEMENTOR_PRO_PLUGIN_URL}" --activate --allow-root || true
     else
@@ -86,7 +86,7 @@ connect_elementor_license() {
 }
 
 install_angie() {
-    echo "Installing Angie (version: ${ANGIE_VERSION})..."
+    echo "Installing Angie..."
     if [ -n "${ANGIE_PLUGIN_URL}" ]; then
         wp plugin install "${ANGIE_PLUGIN_URL}" --activate --allow-root || true
     else
@@ -100,15 +100,13 @@ configure_elementor() {
 	wp elementor experiments activate e_atomic_elements,container,e_opt_in_v4,e_classes --allow-root
 	wp option update e_editor_counter 10 --allow-root
 	for id in $(wp user list --field=ID --allow-root)
-		do wp user meta add "$id" "announcements_user_counter" 999 || echo "Announcement counter already set for user $id" --allow-root
+		do wp user meta add "$id" "announcements_user_counter" 999 --allow-root || echo "Announcement counter already set for user $id"
 	done
 }
 
 wait_for_db
-# install_wordpress
-install_plugins
-# echo "Environment ready!"
-
-exec docker-entrypoint.sh apache2-foreground &
+install_wordpress
+exec docker-entrypoint.sh apache2-foreground 2>/dev/null &
 install_plugins
 wait
+

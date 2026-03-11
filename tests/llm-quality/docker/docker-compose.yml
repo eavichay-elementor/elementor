@@ -22,9 +22,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        ELEMENTOR_VERSION: ${ELEMENTOR_VERSION:-latest}
-        ELEMENTOR_PRO_VERSION: ${ELEMENTOR_PRO_VERSION:-latest}
-        ANGIE_VERSION: ${ANGIE_VERSION:-latest}
+        ELEMENTOR_PLUGIN_URL: ${ELEMENTOR_PLUGIN_URL:-https://downloads.wordpress.org/plugin/elementor.zip}
+        ELEMENTOR_PRO_PLUGIN_URL: ${ELEMENTOR_PRO_PLUGIN_URL:-}
+        ANGIE_PLUGIN_URL: ${ANGIE_PLUGIN_URL:-https://downloads.wordpress.org/plugin/angie.latest-stable.zip}
     ports:
       - "8888:80"
     environment:
@@ -39,6 +39,7 @@ services:
       WORDPRESS_URL: http://localhost:8888
       WORDPRESS_ADMIN_USER: admin
       WORDPRESS_ADMIN_PASSWORD: admin
+      ELEMENTOR_PLUGIN_URL: ${ELEMENTOR_PLUGIN_URL:-https://downloads.wordpress.org/plugin/elementor.zip}
       ELEMENTOR_PRO_PLUGIN_URL: ${ELEMENTOR_PRO_PLUGIN_URL:-}
       ELEMENTOR_LICENSE_KEY: ${ELEMENTOR_LICENSE_KEY:-}
       ANGIE_PLUGIN_URL: ${ANGIE_PLUGIN_URL:-https://downloads.wordpress.org/plugin/angie.latest-stable.zip}
