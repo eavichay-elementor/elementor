@@ -2,7 +2,6 @@ import * as React from 'react';
 import { trackUpgradePromotionClick } from '@elementor/editor-controls';
 import { colorPropTypeUtil, sizePropTypeUtil, stringPropTypeUtil } from '@elementor/editor-props';
 import { CtaButton } from '@elementor/editor-ui';
-import { isExperimentActive } from '@elementor/editor-v1-adapters';
 import { BrushIcon, ExpandDiagonalIcon, ResetIcon, TextIcon } from '@elementor/icons';
 import { __ } from '@wordpress/i18n';
 
@@ -28,20 +27,16 @@ export function registerVariableTypes() {
 		menuActionsFactory: ( { variable, variableId, handlers } ) => {
 			const actions = [];
 
-			if ( ! isExperimentActive( 'e_design_system_sync' ) ) {
-				return [];
-			}
-
 			if ( variable.sync_to_v3 ) {
 				actions.push( {
-					name: __( 'Stop syncing to Version 3', 'elementor' ),
+					name: __( 'Stop syncing to Global Colors', 'elementor' ),
 					icon: ResetIcon,
 					color: 'text.primary',
 					onClick: () => handlers.onStopSync( variableId ),
 				} );
 			} else {
 				actions.push( {
-					name: __( 'Sync to Version 3', 'elementor' ),
+					name: __( 'Sync to Global Colors', 'elementor' ),
 					icon: ResetIcon,
 					color: 'text.primary',
 					onClick: () => handlers.onStartSync( variableId ),
