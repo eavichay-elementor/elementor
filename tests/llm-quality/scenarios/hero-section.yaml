@@ -1,0 +1,22 @@
+test-name: create-hero-section
+complexity: simple
+# setup_script: ./scripts/setup-blank-page.sh # optional
+# teardown-script: ./scripts/cleanup.sh # optional
+user_prompt: |
+  Create a hero section with a large headline "Welcome to Our Site",
+  a subheading, and a blue CTA button saying "Get Started".
+# Alternative: reference external file
+# user_prompt: file://prompts/hero-section.txt
+scoring:
+  - type: llm-rubric
+    evaluation_prompt: |
+      Does the layout contain a prominent headline with "Welcome to Our Site"?
+    threshold: 70
+  - type: llm-rubric
+    evaluation_prompt: |
+      Is there a visible subheading element below the headline?
+    threshold: 70
+  - type: llm-rubric
+    evaluation_prompt: |
+      Is there a blue button with "Get Started" text?
+    threshold: 80

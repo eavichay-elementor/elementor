@@ -62,3 +62,8 @@ docker-output/
 
 # llm-quality tests
 tests/llm-quality/artifacts/
+tests/llm-quality/wordpress.login.result.json
+tests/llm-quality/angie-cookies.json
+
+# mise for local development
+mise.toml

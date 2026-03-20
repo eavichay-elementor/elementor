@@ -8,9 +8,18 @@ dotenvConfig( {
 
 const isCI = Boolean( process.env.CI );
 
+if ( ! process.env.LLM_TEST_BASE_URL ) {
+	throw new Error( 'missing LLM_TEST_BASE_URL environment variable' );
+}
+
+if ( ! process.env.ANGIE_PRODUCTION_URL ) {
+	throw new Error( 'missing ANGIE_PRODUCTION_URL environment variable' );
+}
+
 export default defineConfig( {
-	testDir: './scenarios',
-	timeout: 120_000,
+	testDir: './',
+	globalSetup: require.resolve( './global-setup' ),
+	timeout: 180_000,
 	globalTimeout: 600_000,
 	expect: {
 		timeout: 30_000,
@@ -30,8 +39,7 @@ export default defineConfig( {
 		trace: 'retain-on-failure',
 		video: 'retain-on-failure',
 		screenshot: 'on',
-		baseURL: process.env.LLM_TEST_BASE_URL || 'http://localhost:8888',
+		baseURL: process.env.LLM_TEST_BASE_URL,
 		viewport: { width: 1920, height: 1080 },
 	},
-	outputDir: './artifacts/test-results',
 } );
