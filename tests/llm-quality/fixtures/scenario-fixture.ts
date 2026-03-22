@@ -46,7 +46,6 @@ export const scenarioTest = baseTest.extend<ScenarioFixtures, ScenarioWorkerFixt
 		async ( { browser }, use ) => {
 			const context = await createAuthenticatedContext( browser );
 			await use( context );
-			await context.close();
 		},
 		{ scope: 'worker' },
 	],
@@ -58,7 +57,6 @@ export const scenarioTest = baseTest.extend<ScenarioFixtures, ScenarioWorkerFixt
 	page: async ( { authenticatedContext }, use ) => {
 		const page = await authenticatedContext.newPage();
 		await use( page );
-		await page.close();
 	},
 
 	editorPage: async ( { page }, use, testInfo ) => {

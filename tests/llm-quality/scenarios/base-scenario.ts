@@ -1,4 +1,4 @@
-import { type Page, type Frame, type TestInfo, expect } from '@playwright/test';
+import { type Page, type Frame, type TestInfo } from '@playwright/test';
 import type ApiRequests from '../../playwright/assets/api-requests';
 import type {
 	ScenarioDefinition,
@@ -14,6 +14,7 @@ const ANGIE_SELECTORS = {
 	chatPanel: 'iframe[title="Angie AI Assistant"], [data-testid="angie-chat-panel"], .angie-chat-panel',
 	chatInput: '[data-testid="angie-chat-input-text-field"]',
 	sendButton: 'button.MuiButton-containedSizeSmall',
+	stopButton: 'button[aria-label="Stop Angie response"]',
 	errorMessage: '[data-testid="angie-error"], .angie-error',
 	openChatButton: '#angie-toolbar-button-container button',
 };
@@ -85,16 +86,8 @@ export class BaseScenario {
 
 		const sendButton = angieFrame.locator( ANGIE_SELECTORS.sendButton ).first();
 		await sendButton.click();
-	}
-
-	async waitForAngieResponse( timeout?: number ): Promise<void> {
-		const effectiveTimeout = timeout || TIMEOUTS.messageProcessing;
-
-		const loadingIndicator = this.page.getByText( 'Thinking' );
-		await loadingIndicator.waitFor( { state: 'visible', timeout: TIMEOUTS.action } ).catch( () => { } );
-		await loadingIndicator.waitFor( { state: 'hidden', timeout: effectiveTimeout } );
-
-		await this.page.waitForTimeout( 1000 );
+		const stopButton = angieFrame.locator( ANGIE_SELECTORS.stopButton ).first();
+		await stopButton.waitFor( { state: 'visible' } );
 	}
 
 	async getAngieChatState(): Promise<AngieChatState> {
@@ -122,9 +115,11 @@ export class BaseScenario {
 	}
 
 	async waitForPromptExecution(): Promise<void> {
-		const angieFrame = this.page.locator( ANGIE_SELECTORS.angieFrame );
-		const chatInput = angieFrame.contentFrame().locator( ANGIE_SELECTORS.chatInput );
-		expect( chatInput ).toBeEnabled( { timeout: TIMEOUTS.messageProcessing } );
+		const angieFrame = this.page.locator( ANGIE_SELECTORS.angieFrame ).contentFrame();
+		const stopButton = angieFrame.locator( ANGIE_SELECTORS.stopButton ).first();
+		const submitButton = angieFrame.locator( ANGIE_SELECTORS.sendButton ).first();
+		await stopButton.waitFor( { state: 'visible' } );
+		await submitButton.waitFor( { state: 'visible', timeout: TIMEOUTS.messageProcessing } );
 	}
 
 	async getCanvasState(): Promise<CanvasState> {

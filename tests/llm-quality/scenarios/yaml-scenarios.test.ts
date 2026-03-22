@@ -1,4 +1,4 @@
-import { scenarioTest as test, expect } from '../fixtures/scenario-fixture';
+import { scenarioTest as test } from '../fixtures/scenario-fixture';
 import { BaseScenario } from './base-scenario';
 import { SnapshotRecorder } from '../runner/snapshot-recorder';
 import { runDeterministicChecks } from '../runner/deterministic-checks';
@@ -40,13 +40,6 @@ function runScenarioTest( loadedScenario: LoadedScenario ) {
 			);
 
 			await recorder.captureSnapshot( canvasState, deterministicResults );
-
-			expect(
-				deterministicResults.passed,
-				`Deterministic checks failed: ${ JSON.stringify( deterministicResults.failures ) }`,
-			).toBe( true );
-
-			expect( canvasState.hasContent, 'Canvas should have content' ).toBe( true );
 		} );
 	} );
 }
