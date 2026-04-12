@@ -89,7 +89,7 @@ export async function createElementorServer(): Promise< McpServer > {
 
 	const sdk = getAngieSdk();
 	await sdk.waitForReady();
-	sdk.registerLocalServer( { server, version: VERSION, description: SERVER_INSTRUCTIONS, name: 'Elementor' } );
+	sdk.registerLocalServer( { server, version: VERSION, description: SERVER_INSTRUCTIONS, name: 'elementor' } );
 
 	return server;
 }

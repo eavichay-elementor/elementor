@@ -169,7 +169,7 @@ export async function createElementorKitServer(): Promise< McpServer > {
 	await waitForElementorEditor();
 	const server = new McpServer(
 		{
-			name: 'elementor-kit-server',
+			name: 'elementor-kit',
 			version: VERSION,
 			title: 'Elementor Kit',
 		},
@@ -389,7 +389,7 @@ The tool will permanently update the site's global design settings and return a 
 		server,
 		version: VERSION,
 		description: SERVER_INSTRUCTIONS,
-		name: 'elementor-kit-server',
+		name: 'elementor-kit',
 	} );
 	return server;
 }

@@ -1,5 +1,6 @@
 import { type MCPRegistryEntry } from '@elementor/editor-mcp';
 
+import { initListeners } from './editor-context-management/init-listeners';
 import { initBreakpointsResource } from './resources/breakpoints-resource';
 import { initDocumentStructureResource } from './resources/document-structure-resource';
 import { initWidgetsSchemaResource } from './resources/widgets-schema-resource';
@@ -23,4 +24,6 @@ export const initCanvasMcp = ( reg: MCPRegistryEntry ) => {
 	initGetElementConfigTool( reg );
 	initConfigureElementTool( reg );
 	initBreakpointsResource( reg );
+
+	initListeners();
 };
